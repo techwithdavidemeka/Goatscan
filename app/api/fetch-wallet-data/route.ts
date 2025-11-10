@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseServerClient } from "@/lib/supabaseClient";
 import { calculateWalletMetrics, updateUserWalletMetrics } from "@/lib/wallet-analytics";
+
+// Force dynamic rendering to prevent build-time analysis
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // This route can be called manually or via cron job
 // Add a secret header to prevent unauthorized access
@@ -29,6 +33,9 @@ export async function GET(request: NextRequest) {
         );
       }
     }
+
+    // Create Supabase client
+    const supabase = getSupabaseServerClient();
 
     // Fetch all active users with wallet addresses
     const { data: users, error: usersError } = await supabase
@@ -66,11 +73,12 @@ export async function GET(request: NextRequest) {
         // Calculate metrics
         const metrics = await calculateWalletMetrics(
           user.wallet_address,
-          user.id
+          user.id,
+          supabase
         );
 
         // Update user record
-        await updateUserWalletMetrics(user.id, metrics);
+        await updateUserWalletMetrics(user.id, metrics, supabase);
 
         results.processed++;
         

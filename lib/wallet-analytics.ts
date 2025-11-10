@@ -1,5 +1,5 @@
 import { fetchWalletTransactions, parseTradesFromTransactions, ParsedTrade } from "./helius";
-import { supabase } from "@/lib/supabaseClient";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { Trade } from "@/lib/types";
 
 export interface WalletMetrics {
@@ -11,7 +11,8 @@ export interface WalletMetrics {
 
 export async function calculateWalletMetrics(
   walletAddress: string,
-  userId: string
+  userId: string,
+  supabase: SupabaseClient
 ): Promise<WalletMetrics> {
   try {
     // Fetch transactions from Helius
@@ -106,7 +107,8 @@ export async function calculateWalletMetrics(
 
 export async function updateUserWalletMetrics(
   userId: string,
-  metrics: WalletMetrics
+  metrics: WalletMetrics,
+  supabase: SupabaseClient
 ): Promise<void> {
   const { error } = await supabase
     .from("users")

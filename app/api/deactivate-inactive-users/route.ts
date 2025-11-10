@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseServerClient } from "@/lib/supabaseClient";
+
+// Force dynamic rendering to prevent build-time analysis
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // This route can be called manually or via cron job
 const CRON_SECRET = process.env.CRON_SECRET || "your-secret-key";
@@ -33,6 +37,9 @@ export async function GET(request: NextRequest) {
     const cutoffDate = sevenDaysAgo.toISOString();
 
     console.log(`Checking for inactive users (last trade before ${cutoffDate})`);
+
+    // Create Supabase client
+    const supabase = getSupabaseServerClient();
 
     // Fetch all active users
     const { data: allActiveUsers, error: fetchError } = await supabase
