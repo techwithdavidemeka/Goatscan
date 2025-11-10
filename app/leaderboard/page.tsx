@@ -175,7 +175,7 @@ export default function LeaderboardPage() {
       <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">KOL Leaderboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">GOAT Leaderboard</h1>
           
           {/* Time Filter Tabs */}
           <div className="flex gap-2 bg-gray-800/50 rounded-lg p-1">
