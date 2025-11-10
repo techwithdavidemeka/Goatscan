@@ -2,52 +2,53 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Trophy, TrendingUp, TrendingDown, Search, Users } from "lucide-react";
 import Link from "next/link";
-import { getLeaderboard } from "@/lib/supabase/queries";
+import { getLeaderboard, getUserTrades } from "@/lib/supabase/queries";
 import { User } from "@/lib/types";
+import { Trophy } from "lucide-react";
 
-type TimeFilter = "all" | "24h" | "7d" | "30d";
+type TimeFilter = "daily" | "weekly" | "monthly";
+
+// Approximate SOL price (you might want to fetch this dynamically)
+const SOL_PRICE_USD = 166;
 
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("daily");
+  const [tradeCounts, setTradeCounts] = useState<Record<string, { wins: number; total: number }>>({});
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       const traders = await getLeaderboard();
       setLeaderboard(traders);
+      
+      // Fetch trade counts for each trader
+      const counts: Record<string, { wins: number; total: number }> = {};
+      for (const trader of traders) {
+        const trades = await getUserTrades(trader.id);
+        const wins = trades.filter(t => t.profit_loss_usd > 0).length;
+        counts[trader.id] = { wins, total: trades.length };
+      }
+      setTradeCounts(counts);
+      
       setLoading(false);
     }
 
     fetchData();
   }, []);
 
-  // Filter and sort users
+  // Filter by time period
   const filteredLeaderboard = useMemo(() => {
     let filtered = [...leaderboard];
 
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter((user) =>
-        user.x_username.toLowerCase().includes(query)
-      );
-    }
-
-    // Apply time filter (mock - in production, this would filter by last_trade_timestamp)
-    if (timeFilter !== "all") {
+    if (timeFilter !== "daily") {
       const now = Date.now();
       const timeMap: Record<string, number> = {
-        "24h": 24 * 60 * 60 * 1000,
-        "7d": 7 * 24 * 60 * 60 * 1000,
-        "30d": 30 * 24 * 60 * 60 * 1000,
+        daily: 24 * 60 * 60 * 1000,
+        weekly: 7 * 24 * 60 * 60 * 1000,
+        monthly: 30 * 24 * 60 * 60 * 1000,
       };
       const cutoffTime = now - timeMap[timeFilter];
 
@@ -58,210 +59,172 @@ export default function LeaderboardPage() {
       });
     }
 
-    // Sort by PnL percent descending (already sorted from API, but re-sort after filtering)
-    return filtered.sort((a, b) => b.pnl_percent - a.pnl_percent);
-  }, [leaderboard, searchQuery, timeFilter]);
+    // Sort by total profit USD descending
+    return filtered.sort((a, b) => b.total_profit_usd - a.total_profit_usd);
+  }, [leaderboard, timeFilter]);
+
+  // Helper function to get short wallet identifier (6 characters like "2kv8X2")
+  const getShortWallet = (address: string) => {
+    // Take first 6 characters and capitalize appropriately
+    return address.slice(0, 6);
+  };
+
+  // Helper function to convert USD to SOL
+  const usdToSol = (usd: number) => {
+    return usd / SOL_PRICE_USD;
+  };
+
+  // Helper function to format numbers
+  const formatNumber = (num: number, decimals: number = 2) => {
+    return num.toLocaleString(undefined, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  };
+
+  // Get rank background style
+  const getRankStyle = (index: number) => {
+    if (index === 0) {
+      return "bg-gradient-to-r from-yellow-600/20 to-yellow-500/10 border-yellow-500/30";
+    } else if (index === 1) {
+      return "bg-gradient-to-r from-gray-400/20 to-gray-300/10 border-gray-400/30";
+    } else if (index === 2) {
+      return "bg-gradient-to-r from-orange-600/20 to-orange-500/10 border-orange-600/30";
+    }
+    return "bg-gray-800/50 border-gray-700/50";
+  };
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading...</div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-gray-400">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Leaderboard</h1>
-            <p className="text-muted-foreground">
-              Top Solana traders ranked by PnL percentage
-            </p>
-          </div>
-          <div className="flex items-center space-x-2 text-muted-foreground">
-            <Users className="h-5 w-5" />
-            <span className="text-sm font-medium">
-              {filteredLeaderboard.length} {filteredLeaderboard.length === 1 ? "trader" : "traders"}
-            </span>
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-white">KOL Leaderboard</h1>
+          
+          {/* Time Filter Tabs */}
+          <div className="flex gap-2 bg-gray-800/50 rounded-lg p-1">
+            {(["daily", "weekly", "monthly"] as TimeFilter[]).map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setTimeFilter(filter)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  timeFilter === filter
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by username..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+        {/* Leaderboard List */}
+        {filteredLeaderboard.length === 0 ? (
+          <div className="text-center text-gray-400 py-12">
+            No traders found
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant={timeFilter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeFilter("all")}
-            >
-              All Time
-            </Button>
-            <Button
-              variant={timeFilter === "24h" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeFilter("24h")}
-            >
-              Top 24h
-            </Button>
-            <Button
-              variant={timeFilter === "7d" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeFilter("7d")}
-            >
-              Top 7d
-            </Button>
-            <Button
-              variant={timeFilter === "30d" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeFilter("30d")}
-            >
-              Top 30d
-            </Button>
-          </div>
-        </div>
-      </motion.div>
+        ) : (
+          <div className="space-y-2">
+            {filteredLeaderboard.map((trader, index) => {
+              const tradeCount = tradeCounts[trader.id] || { wins: 0, total: 0 };
+              const profitSol = usdToSol(trader.total_profit_usd);
+              const isProfit = trader.total_profit_usd >= 0;
 
-      {/* Leaderboard Grid */}
-      {filteredLeaderboard.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center text-muted-foreground">
-              {searchQuery ? "No traders found matching your search" : "No traders found"}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredLeaderboard.map((trader, index) => (
-            <motion.div
-              key={trader.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-            >
-              <Link href={`/profile/${trader.x_username}`}>
-                <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer h-full">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`text-2xl font-bold ${
-                            index === 0
-                              ? "text-yellow-500"
-                              : index === 1
-                              ? "text-gray-400"
-                              : index === 2
-                              ? "text-orange-600"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          #{index + 1}
-                        </div>
-                        {index < 3 && (
-                          <Trophy
-                            className={`h-5 w-5 ${
+              return (
+                <motion.div
+                  key={trader.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.03 }}
+                >
+                  <Link href={`/profile/${trader.x_username}`}>
+                    <div
+                      className={`rounded-lg border p-3 md:p-4 hover:bg-gray-800/70 transition-all cursor-pointer ${getRankStyle(
+                        index
+                      )}`}
+                    >
+                      <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
+                        {/* Rank */}
+                        <div className="flex items-center gap-1.5 min-w-[40px] md:min-w-[50px]">
+                          {index === 0 && (
+                            <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 flex-shrink-0" />
+                          )}
+                          <span
+                            className={`text-sm md:text-base lg:text-lg font-bold ${
                               index === 0
                                 ? "text-yellow-500"
                                 : index === 1
-                                ? "text-gray-400"
-                                : "text-orange-600"
-                            }`}
-                          />
-                        )}
-                      </div>
-                      <div
-                        className={`flex items-center space-x-1 font-bold text-lg ${
-                          trader.pnl_percent >= 0 ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {trader.pnl_percent >= 0 ? (
-                          <TrendingUp className="h-4 w-4" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4" />
-                        )}
-                        <span>
-                          {trader.pnl_percent > 0 ? "+" : ""}
-                          {trader.pnl_percent.toFixed(2)}%
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Username and Followers */}
-                      <div>
-                        <CardTitle className="text-xl mb-1">
-                          @{trader.x_username}
-                        </CardTitle>
-                        {trader.followers_count > 0 && (
-                          <CardDescription className="flex items-center space-x-1">
-                            <Users className="h-3 w-3" />
-                            <span>{trader.followers_count.toLocaleString()} followers</span>
-                          </CardDescription>
-                        )}
-                      </div>
-
-                      {/* Wallet Address */}
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">
-                          Wallet Address
-                        </div>
-                        <div className="font-mono text-sm bg-muted px-2 py-1 rounded">
-                          {trader.wallet_address.slice(0, 6)}...{trader.wallet_address.slice(-6)}
-                        </div>
-                      </div>
-
-                      {/* Stats */}
-                      <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                        <div>
-                          <div className="text-xs text-muted-foreground mb-1">
-                            Total Profit
-                          </div>
-                          <div
-                            className={`font-bold ${
-                              trader.total_profit_usd >= 0
-                                ? "text-green-600"
-                                : "text-red-600"
+                                ? "text-gray-300"
+                                : index === 2
+                                ? "text-orange-500"
+                                : "text-gray-400"
                             }`}
                           >
-                            {trader.total_profit_usd >= 0 ? "+" : ""}
-                            ${trader.total_profit_usd.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                            {index + 1}
+                          </span>
+                        </div>
+
+                        {/* Avatar */}
+                        <div className="w-9 h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs md:text-sm lg:text-base flex-shrink-0">
+                          {trader.x_username.charAt(0).toUpperCase()}
+                        </div>
+
+                        {/* Username and Wallet */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 md:gap-2 mb-0.5">
+                            <span className="font-semibold text-xs md:text-sm lg:text-base text-white truncate">
+                              {trader.x_username}
+                            </span>
+                            <svg
+                              className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400 flex-shrink-0"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                          </div>
+                          <div className="text-xs text-gray-400 font-mono">
+                            {getShortWallet(trader.wallet_address)}
                           </div>
                         </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground mb-1">
-                            Total Trades
+
+                        {/* Trade Count */}
+                        <div className="text-sm md:text-base text-gray-300 font-medium min-w-[50px] md:min-w-[60px] text-right">
+                          {tradeCount.wins}/{tradeCount.total}
+                        </div>
+
+                        {/* PnL */}
+                        <div
+                          className={`text-sm md:text-base font-bold text-right min-w-[120px] md:min-w-[180px] ${
+                            isProfit ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          <div className="whitespace-nowrap">
+                            {isProfit ? "+" : ""}
+                            {formatNumber(profitSol)} Sol
                           </div>
-                          <div className="font-bold">{trader.total_trades}</div>
+                          <div className="text-xs md:text-sm text-gray-400 font-normal whitespace-nowrap">
+                            (${formatNumber(Math.abs(trader.total_profit_usd), 1)})
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      )}
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
