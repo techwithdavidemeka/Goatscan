@@ -110,10 +110,10 @@ export default function LandingPage() {
   // Show loading state while checking auth
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
         </div>
       </div>
     );
@@ -125,9 +125,9 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-900">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted/20 py-20 md:py-32">
+      <section className="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800/50 py-20 md:py-32">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -139,7 +139,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent"
+              className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
             >
               Track the best meme coin traders on X
             </motion.h1>
@@ -147,9 +147,9 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xl md:text-2xl text-muted-foreground mb-8"
+              className="text-xl md:text-2xl text-gray-400 mb-8"
             >
-              powered by <span className="font-bold text-foreground">Goatscan</span>
+              powered by <span className="font-bold text-white">Goatscan</span>
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -159,7 +159,7 @@ export default function LandingPage() {
               <Link href="/signup">
                 <Button
                   size="lg"
-                  className="text-lg px-8 py-6 h-auto group"
+                  className="text-lg px-8 py-6 h-auto group bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   Connect your wallet + X to join
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -171,7 +171,7 @@ export default function LandingPage() {
       </section>
 
       {/* Top 3 Traders Section */}
-      <section className="py-16 bg-background">
+      <section className="py-16 bg-gray-900">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -180,28 +180,28 @@ export default function LandingPage() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
               Top Traders
             </h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-gray-400">
               See who's leading the pack
             </p>
           </motion.div>
 
           {loading ? (
-            <div className="text-center py-12">Loading top traders...</div>
+            <div className="text-center py-12 text-gray-400">Loading top traders...</div>
           ) : topTraders.length > 0 ? (
             <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {topTraders.map((trader, index) => {
                 const rankColors = [
                   "text-yellow-500",
-                  "text-gray-400",
-                  "text-orange-600",
+                  "text-gray-300",
+                  "text-orange-500",
                 ];
                 const rankBgColors = [
-                  "bg-yellow-500/10 border-yellow-500/20",
-                  "bg-gray-400/10 border-gray-400/20",
-                  "bg-orange-600/10 border-orange-600/20",
+                  "bg-yellow-500/10 border-yellow-500/30",
+                  "bg-gray-400/10 border-gray-400/30",
+                  "bg-orange-600/10 border-orange-600/30",
                 ];
 
                 return (
@@ -214,7 +214,7 @@ export default function LandingPage() {
                   >
                     <Link href={`/profile/${trader.x_username}`}>
                       <Card
-                        className={`hover:shadow-xl transition-all duration-300 cursor-pointer h-full ${
+                        className={`hover:shadow-xl transition-all duration-300 cursor-pointer h-full bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 ${
                           rankBgColors[index]
                         }`}
                       >
@@ -231,11 +231,11 @@ export default function LandingPage() {
                               />
                             )}
                           </div>
-                          <CardTitle className="text-2xl">
+                          <CardTitle className="text-2xl text-white">
                             @{trader.x_username}
                           </CardTitle>
                           {trader.followers_count > 0 && (
-                            <CardDescription>
+                            <CardDescription className="text-gray-400">
                               {trader.followers_count.toLocaleString()} followers
                             </CardDescription>
                           )}
@@ -243,14 +243,14 @@ export default function LandingPage() {
                         <CardContent>
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-sm text-gray-400">
                                 PnL
                               </span>
                               <span
                                 className={`font-bold text-lg ${
                                   trader.pnl_percent >= 0
-                                    ? "text-green-600"
-                                    : "text-red-600"
+                                    ? "text-green-500"
+                                    : "text-red-500"
                                 }`}
                               >
                                 {trader.pnl_percent >= 0 ? (
@@ -263,14 +263,14 @@ export default function LandingPage() {
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-sm text-gray-400">
                                 Total Profit
                               </span>
                               <span
                                 className={`font-semibold ${
                                   trader.total_profit_usd >= 0
-                                    ? "text-green-600"
-                                    : "text-red-600"
+                                    ? "text-green-500"
+                                    : "text-red-500"
                                 }`}
                               >
                                 {trader.total_profit_usd >= 0 ? "+" : ""}$
@@ -283,11 +283,11 @@ export default function LandingPage() {
                                 )}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between pt-2 border-t">
-                              <span className="text-sm text-muted-foreground">
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-700">
+                              <span className="text-sm text-gray-400">
                                 Total Trades
                               </span>
-                              <span className="font-semibold">
+                              <span className="font-semibold text-white">
                                 {trader.total_trades}
                               </span>
                             </div>
@@ -300,7 +300,7 @@ export default function LandingPage() {
               })}
             </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-12 text-gray-400">
               No traders yet. Be the first to join!
             </div>
           )}
@@ -308,7 +308,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16 bg-gray-800/30">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -317,10 +317,10 @@ export default function LandingPage() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
               How It Works
             </h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-gray-400">
               Get started in 4 simple steps
             </p>
           </motion.div>
@@ -336,20 +336,20 @@ export default function LandingPage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <Card className="h-full hover:shadow-lg transition-shadow">
+                  <Card className="h-full hover:shadow-lg transition-shadow bg-gray-800/50 border-gray-700 hover:bg-gray-800/70">
                     <CardHeader>
                       <div className="flex items-center space-x-3 mb-4">
-                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-500/10">
                           <Icon className={`h-6 w-6 ${step.color}`} />
                         </div>
-                        <div className="text-2xl font-bold text-muted-foreground">
+                        <div className="text-2xl font-bold text-gray-400">
                           {step.step}
                         </div>
                       </div>
-                      <CardTitle className="text-xl">{step.title}</CardTitle>
+                      <CardTitle className="text-xl text-white">{step.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <CardDescription className="text-base">
+                      <CardDescription className="text-base text-gray-400">
                         {step.description}
                       </CardDescription>
                     </CardContent>
@@ -367,7 +367,7 @@ export default function LandingPage() {
             className="text-center mt-12"
           >
             <Link href="/signup">
-              <Button size="lg" className="text-lg px-8 py-6 h-auto">
+              <Button size="lg" className="text-lg px-8 py-6 h-auto bg-blue-600 hover:bg-blue-700 text-white">
                 Get Started Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -377,7 +377,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer CTA */}
-      <section className="py-16 bg-background border-t">
+      <section className="py-16 bg-gray-900 border-t border-gray-800">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -385,14 +385,14 @@ export default function LandingPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h3 className="text-3xl font-bold mb-4">
+            <h3 className="text-3xl font-bold mb-4 text-white">
               Ready to join the leaderboard?
             </h3>
-            <p className="text-lg text-muted-foreground mb-6">
+            <p className="text-lg text-gray-400 mb-6">
               Connect your wallet and X account to start tracking your trades
             </p>
             <Link href="/signup">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6 h-auto">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6 h-auto border-gray-700 text-white hover:bg-gray-800">
                 Sign Up Now
               </Button>
             </Link>

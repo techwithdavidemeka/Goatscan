@@ -6,11 +6,79 @@ import Link from "next/link";
 import { getLeaderboard, getUserTrades } from "@/lib/supabase/queries";
 import { User } from "@/lib/types";
 import { Trophy } from "lucide-react";
+import { getXProfileUrl, getXAvatarUrl, getDefaultAvatarUrl } from "@/lib/x-profile";
 
 type TimeFilter = "daily" | "weekly" | "monthly";
 
 // Approximate SOL price (you might want to fetch this dynamically)
 const SOL_PRICE_USD = 166;
+
+// Avatar component with fade-in animation
+function Avatar({ username, className }: { username: string; className?: string }) {
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
+
+  useEffect(() => {
+    // Try to get X avatar URL
+    const xAvatarUrl = getXAvatarUrl(username);
+    
+    if (xAvatarUrl) {
+      // Try to load the X avatar
+      const img = new Image();
+      img.onload = () => {
+        setAvatarUrl(xAvatarUrl);
+        // Image will be loaded, placeholder will hide when image loads
+      };
+      img.onerror = () => {
+        // Fallback to default avatar
+        setAvatarUrl(getDefaultAvatarUrl(username));
+        setShowPlaceholder(false);
+        setImageLoaded(true);
+      };
+      img.src = xAvatarUrl;
+    } else {
+      // Use default avatar immediately
+      setAvatarUrl(getDefaultAvatarUrl(username));
+      setShowPlaceholder(false);
+      setImageLoaded(true);
+    }
+  }, [username]);
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setShowPlaceholder(false);
+  };
+
+  const handleImageError = () => {
+    // Fallback to default avatar
+    setAvatarUrl(getDefaultAvatarUrl(username));
+    setImageLoaded(true);
+    setShowPlaceholder(false);
+  };
+
+  return (
+    <div className={`relative ${className || ""}`}>
+      {showPlaceholder && (
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs md:text-sm lg:text-base border-2 border-white/20 z-10">
+          {username.charAt(0).toUpperCase()}
+        </div>
+      )}
+      {avatarUrl && (
+        <motion.img
+          src={avatarUrl}
+          alt={username}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          className="w-full h-full rounded-full border-2 border-white/20 object-cover"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: imageLoaded ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<User[]>([]);
@@ -174,9 +242,10 @@ export default function LeaderboardPage() {
                         </div>
 
                         {/* Avatar */}
-                        <div className="w-9 h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs md:text-sm lg:text-base flex-shrink-0">
-                          {trader.x_username.charAt(0).toUpperCase()}
-                        </div>
+                        <Avatar
+                          username={trader.x_username}
+                          className="w-9 h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 flex-shrink-0"
+                        />
 
                         {/* Username and Wallet */}
                         <div className="flex-1 min-w-0">
@@ -184,13 +253,22 @@ export default function LeaderboardPage() {
                             <span className="font-semibold text-xs md:text-sm lg:text-base text-white truncate">
                               {trader.x_username}
                             </span>
-                            <svg
-                              className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400 flex-shrink-0"
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
+                            <a
+                              href={getXProfileUrl(trader.x_username)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-gray-400 hover:text-blue-400 transition-colors flex-shrink-0"
+                              title={`View @${trader.x_username} on X`}
                             >
-                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                            </svg>
+                              <svg
+                                className="w-3.5 h-3.5 md:w-4 md:h-4"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                              </svg>
+                            </a>
                           </div>
                           <div className="text-xs text-gray-400 font-mono">
                             {getShortWallet(trader.wallet_address)}

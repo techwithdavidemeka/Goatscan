@@ -217,42 +217,43 @@ function SignUpForm() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-4xl font-bold mb-2 text-center">Join Goatscan</h1>
-        <p className="text-muted-foreground text-center mb-8">
-          Connect your X account and Solana wallet to start tracking your trades
-        </p>
+    <div className="min-h-screen bg-gray-900">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-4xl font-bold mb-2 text-center text-white">Join Goatscan</h1>
+          <p className="text-gray-400 text-center mb-8">
+            Connect your X account and Solana wallet to start tracking your trades
+          </p>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign Up</CardTitle>
-            <CardDescription>
-              Link your X account and Solana wallet to get started
-            </CardDescription>
-          </CardHeader>
+          <Card className="bg-gray-800/50 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Sign Up</CardTitle>
+              <CardDescription className="text-gray-400">
+                Link your X account and Solana wallet to get started
+              </CardDescription>
+            </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="x-handle" className="text-sm font-medium">
+                <label htmlFor="x-handle" className="text-sm font-medium text-white">
                   X (Twitter) Account
                 </label>
                 {xConnected ? (
-                  <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                  <div className="flex items-center justify-between p-3 border border-gray-700 rounded-md bg-gray-800/50">
                     <div className="flex items-center space-x-2">
                       <Twitter className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium">@{xHandle}</span>
+                      <span className="font-medium text-white">@{xHandle}</span>
                       {followersCount > 0 && (
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-gray-400">
                           ({followersCount.toLocaleString()} followers)
                         </span>
                       )}
                     </div>
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-green-500" />
                   </div>
                 ) : (
                   <Button
@@ -260,7 +261,7 @@ function SignUpForm() {
                     variant="outline"
                     onClick={handleXConnect}
                     disabled={isConnecting}
-                    className="w-full flex items-center justify-center space-x-2"
+                    className="w-full flex items-center justify-center space-x-2 border-gray-700 text-white hover:bg-gray-800"
                   >
                     {isConnecting ? (
                       <>
@@ -278,25 +279,25 @@ function SignUpForm() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="wallet" className="text-sm font-medium">
+                <label htmlFor="wallet" className="text-sm font-medium text-white">
                   Solana Wallet
                 </label>
                 {walletConnected ? (
-                  <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                  <div className="flex items-center justify-between p-3 border border-gray-700 rounded-md bg-gray-800/50">
                     <div className="flex items-center space-x-2">
                       <Wallet className="h-4 w-4 text-purple-500" />
-                      <span className="font-mono text-sm">
+                      <span className="font-mono text-sm text-white">
                         {walletAddress.slice(0, 8)}...{walletAddress.slice(-8)}
                       </span>
                     </div>
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-green-500" />
                   </div>
                 ) : (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleWalletConnect}
-                    className="w-full flex items-center justify-center space-x-2"
+                    className="w-full flex items-center justify-center space-x-2 border-gray-700 text-white hover:bg-gray-800"
                   >
                     <Wallet className="h-4 w-4" />
                     <span>Connect Wallet</span>
@@ -308,7 +309,7 @@ function SignUpForm() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="p-3 bg-destructive/10 text-destructive rounded-md text-sm"
+                  className="p-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded-md text-sm"
                 >
                   {error}
                 </motion.div>
@@ -316,7 +317,7 @@ function SignUpForm() {
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={isSubmitting || !xConnected || !walletConnected}
               >
                 {isSubmitting ? (
@@ -337,7 +338,8 @@ function SignUpForm() {
           onOpenChange={setIsWalletModalOpen}
           onConnect={handleWalletConnected}
         />
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -345,9 +347,11 @@ function SignUpForm() {
 export default function SignUpPage() {
   return (
     <Suspense fallback={
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-gray-900">
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          </div>
         </div>
       </div>
     }>

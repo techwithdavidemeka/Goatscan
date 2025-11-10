@@ -95,11 +95,11 @@ export function Navbar() {
   const displayName = getDisplayName();
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
           <motion.span
-            className="text-2xl font-bold"
+            className="text-2xl font-bold text-white"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -114,8 +114,10 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "text-sm font-medium transition-colors",
+                  isActive 
+                    ? "text-white" 
+                    : "text-gray-400 hover:text-white"
                 )}
               >
                 {item.label}
@@ -123,7 +125,7 @@ export function Navbar() {
             );
           })}
           {loading ? (
-            <div className="h-9 w-24 animate-pulse rounded-md bg-muted" />
+            <div className="h-9 w-24 animate-pulse rounded-md bg-gray-800" />
           ) : user ? (
             <div className="flex items-center gap-2">
               <Link
@@ -132,7 +134,7 @@ export function Navbar() {
                     ? `/profile/${userProfile.x_username}`
                     : "/signup"
                 }
-                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/80"
+                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-800/80"
               >
                 <UserIcon className="h-4 w-4 flex-shrink-0" />
                 <span className="hidden sm:inline-block truncate max-w-[120px]">
@@ -146,7 +148,7 @@ export function Navbar() {
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="h-8 px-2 sm:px-3"
+                className="h-8 px-2 sm:px-3 text-gray-300 hover:text-white hover:bg-gray-800"
                 title="Log out"
               >
                 <LogOut className="h-4 w-4" />
@@ -156,7 +158,7 @@ export function Navbar() {
           ) : (
             <Link
               href="/signup"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
             >
               Sign Up
             </Link>

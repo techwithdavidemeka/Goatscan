@@ -99,8 +99,8 @@ export default function ProfilePage({
 
   if (loading || !trader) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading...</div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-gray-400">Loading...</div>
       </div>
     );
   }
@@ -138,56 +138,57 @@ export default function ProfilePage({
   const latestTrades = trades.slice(0, 10);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Trader Info Header */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <div className="flex items-center space-x-3 mb-2">
-                <h1 className="text-4xl font-bold">@{trader.x_username}</h1>
-                {!isActive && (
-                  <Badge variant="warning">Inactive</Badge>
-                )}
-              </div>
-              <div className="flex items-center space-x-4 text-muted-foreground">
-                {trader.followers_count > 0 && (
-                  <div className="flex items-center space-x-1">
-                    <Users className="h-4 w-4" />
-                    <span>{trader.followers_count.toLocaleString()} followers</span>
-                  </div>
-                )}
-                {trader.last_trade_timestamp && (
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      Last active:{" "}
-                      {new Date(trader.last_trade_timestamp).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
+    <div className="min-h-screen bg-gray-900">
+      <div className="container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Trader Info Header */}
+          <div className="mb-8">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="flex items-center space-x-3 mb-2">
+                  <h1 className="text-4xl font-bold text-white">@{trader.x_username}</h1>
+                  {!isActive && (
+                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Inactive</Badge>
+                  )}
+                </div>
+                <div className="flex items-center space-x-4 text-gray-400">
+                  {trader.followers_count > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <Users className="h-4 w-4" />
+                      <span>{trader.followers_count.toLocaleString()} followers</span>
+                    </div>
+                  )}
+                  {trader.last_trade_timestamp && (
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        Last active:{" "}
+                        {new Date(trader.last_trade_timestamp).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-            <div className="font-mono text-sm bg-muted p-3 rounded-md inline-block">
-              {trader.wallet_address}
+            <div className="flex items-center space-x-2">
+              <Wallet className="h-4 w-4 text-gray-400" />
+              <div className="font-mono text-sm bg-gray-800/50 border border-gray-700 p-3 rounded-md inline-block text-white">
+                {trader.wallet_address}
+              </div>
+              <a
+                href={`https://solscan.io/account/${trader.wallet_address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 hover:underline text-sm ml-2"
+              >
+                View on Solscan →
+              </a>
             </div>
-            <a
-              href={`https://solscan.io/account/${trader.wallet_address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline text-sm ml-2"
-            >
-              View on Solscan →
-            </a>
           </div>
-        </div>
 
         {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -200,9 +201,9 @@ export default function ProfilePage({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Card>
+                <Card className="bg-gray-800/50 border-gray-700">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="text-sm font-medium text-gray-300">
                       {stat.label}
                     </CardTitle>
                     <Icon className={`h-4 w-4 ${stat.color}`} />
@@ -221,10 +222,10 @@ export default function ProfilePage({
         {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2 mb-8">
           {/* Profit/Loss Over Time */}
-          <Card>
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardHeader>
-              <CardTitle>Profit/Loss Over Time</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-white">Profit/Loss Over Time</CardTitle>
+              <CardDescription className="text-gray-400">
                 Cumulative profit and loss from trades
               </CardDescription>
             </CardHeader>
@@ -251,7 +252,7 @@ export default function ProfilePage({
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <div className="h-[300px] flex items-center justify-center text-gray-400">
                   No trade data available
                 </div>
               )}
@@ -259,10 +260,10 @@ export default function ProfilePage({
           </Card>
 
           {/* Portfolio Growth */}
-          <Card>
+          <Card className="bg-gray-800/50 border-gray-700">
             <CardHeader>
-              <CardTitle>Portfolio Growth</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-white">Portfolio Growth</CardTitle>
+              <CardDescription className="text-gray-400">
                 Portfolio value over time
               </CardDescription>
             </CardHeader>
@@ -298,10 +299,10 @@ export default function ProfilePage({
         </div>
 
         {/* Latest Trades Table */}
-        <Card>
+        <Card className="bg-gray-800/50 border-gray-700">
           <CardHeader>
-            <CardTitle>Latest Trades</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-white">Latest Trades</CardTitle>
+            <CardDescription className="text-gray-400">
               Recent trading activity
             </CardDescription>
           </CardHeader>
@@ -309,20 +310,20 @@ export default function ProfilePage({
             {latestTrades.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Token</TableHead>
-                    <TableHead>Amount (USD)</TableHead>
-                    <TableHead>Profit/Loss</TableHead>
-                    <TableHead>Date</TableHead>
+                  <TableRow className="border-gray-700">
+                    <TableHead className="text-gray-300">Token</TableHead>
+                    <TableHead className="text-gray-300">Amount (USD)</TableHead>
+                    <TableHead className="text-gray-300">Profit/Loss</TableHead>
+                    <TableHead className="text-gray-300">Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {latestTrades.map((trade) => (
-                    <TableRow key={trade.id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={trade.id} className="border-gray-700 hover:bg-gray-800/50">
+                      <TableCell className="font-medium text-white">
                         {trade.token_symbol || "N/A"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-gray-300">
                         ${trade.amount_usd.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
@@ -332,8 +333,8 @@ export default function ProfilePage({
                         <span
                           className={
                             trade.profit_loss_usd >= 0
-                              ? "text-green-600 font-semibold"
-                              : "text-red-600 font-semibold"
+                              ? "text-green-500 font-semibold"
+                              : "text-red-500 font-semibold"
                           }
                         >
                           {trade.profit_loss_usd >= 0 ? "+" : ""}
@@ -343,7 +344,7 @@ export default function ProfilePage({
                           })}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-gray-300">
                         {new Date(trade.timestamp).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "short",
@@ -357,7 +358,7 @@ export default function ProfilePage({
                 </TableBody>
               </Table>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-gray-400">
                 No trades found
               </div>
             )}
