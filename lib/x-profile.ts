@@ -13,28 +13,17 @@ export function getXProfileUrl(username: string): string {
 
 /**
  * Get X profile picture URL
- * Note: Twitter/X doesn't provide a public API for profile pictures without authentication
- * This uses a workaround that may not always work due to CORS/rate limiting
- * For production, consider using Twitter API v2 with proper authentication
+ * Uses unavatar.io service to fetch X/Twitter profile pictures
+ * This service provides a reliable way to get profile pictures without API authentication
  */
-export function getXAvatarUrl(username: string): string | null {
+export function getXAvatarUrl(username: string): string {
   // Remove @ if present
   const cleanUsername = username.replace(/^@/, "");
   
-  // Option 1: Try using Twitter's CDN (may not work due to CORS)
-  // This is a known workaround but may be blocked
-  // return `https://unavatar.io/twitter/${cleanUsername}`;
-  
-  // Option 2: Use a service like unavatar.io or similar
-  // return `https://unavatar.io/twitter/${cleanUsername}?fallback=false`;
-  
-  // Option 3: For now, return null and use default avatar
-  // In production, you'd want to:
-  // 1. Store avatar URLs in your database when users sign up
-  // 2. Use Twitter API v2 to fetch avatars server-side
-  // 3. Use a service like unavatar.io or similar
-  
-  return null;
+  // Use unavatar.io service to fetch X profile pictures
+  // This service works by scraping public profile data
+  // Format: https://unavatar.io/twitter/{username}
+  return `https://unavatar.io/twitter/${cleanUsername}?fallback=false`;
 }
 
 /**

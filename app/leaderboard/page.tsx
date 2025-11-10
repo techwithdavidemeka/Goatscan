@@ -15,34 +15,17 @@ const SOL_PRICE_USD = 166;
 
 // Avatar component with fade-in animation
 function Avatar({ username, className }: { username: string; className?: string }) {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>(getXAvatarUrl(username));
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    // Try to get X avatar URL
-    const xAvatarUrl = getXAvatarUrl(username);
-    
-    if (xAvatarUrl) {
-      // Try to load the X avatar
-      const img = new Image();
-      img.onload = () => {
-        setAvatarUrl(xAvatarUrl);
-        // Image will be loaded, placeholder will hide when image loads
-      };
-      img.onerror = () => {
-        // Fallback to default avatar
-        setAvatarUrl(getDefaultAvatarUrl(username));
-        setShowPlaceholder(false);
-        setImageLoaded(true);
-      };
-      img.src = xAvatarUrl;
-    } else {
-      // Use default avatar immediately
-      setAvatarUrl(getDefaultAvatarUrl(username));
-      setShowPlaceholder(false);
-      setImageLoaded(true);
-    }
+    // Reset state when username changes
+    setImageLoaded(false);
+    setShowPlaceholder(true);
+    setHasError(false);
+    setAvatarUrl(getXAvatarUrl(username));
   }, [username]);
 
   const handleImageLoad = () => {
@@ -51,7 +34,8 @@ function Avatar({ username, className }: { username: string; className?: string 
   };
 
   const handleImageError = () => {
-    // Fallback to default avatar
+    // Fallback to default avatar if X avatar fails to load
+    setHasError(true);
     setAvatarUrl(getDefaultAvatarUrl(username));
     setImageLoaded(true);
     setShowPlaceholder(false);
@@ -59,7 +43,7 @@ function Avatar({ username, className }: { username: string; className?: string 
 
   return (
     <div className={`relative ${className || ""}`}>
-      {showPlaceholder && (
+      {showPlaceholder && !hasError && (
         <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs md:text-sm lg:text-base border-2 border-white/20 z-10">
           {username.charAt(0).toUpperCase()}
         </div>
