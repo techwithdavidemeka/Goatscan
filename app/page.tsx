@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTopTraders } from "@/lib/supabase/queries";
 import { User } from "@/lib/types";
+import { supabase } from "@/lib/supabaseClient";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import {
   TrendingUp,
   TrendingDown,
@@ -19,19 +22,59 @@ import {
 } from "lucide-react";
 
 export default function LandingPage() {
+  const router = useRouter();
   const [topTraders, setTopTraders] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
+  // Check authentication status
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      const traders = await getTopTraders(3);
-      setTopTraders(traders);
-      setLoading(false);
+    async function checkAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        
+        // If user is logged in, redirect to leaderboard
+        if (session?.user) {
+          router.push("/leaderboard");
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking auth:", error);
+      } finally {
+        setCheckingAuth(false);
+      }
     }
 
-    fetchData();
-  }, []);
+    checkAuth();
+
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        router.push("/leaderboard");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+    // Only fetch traders if user is not logged in
+    if (!checkingAuth && !user) {
+      async function fetchData() {
+        setLoading(true);
+        const traders = await getTopTraders(3);
+        setTopTraders(traders);
+        setLoading(false);
+      }
+
+      fetchData();
+    }
+  }, [checkingAuth, user]);
 
   const howItWorksSteps = [
     {
@@ -63,6 +106,23 @@ export default function LandingPage() {
       color: "text-orange-500",
     },
   ];
+
+  // Show loading state while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is logged in, don't render the landing page (redirect will happen)
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen">

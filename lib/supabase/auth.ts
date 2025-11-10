@@ -5,14 +5,23 @@ export async function signInWithTwitter(redirectTo?: string) {
   // Get the current page path if redirectTo is not provided
   const currentPath = redirectTo || window.location.pathname;
   
-  // Build the callback URL with the redirect parameter
-  const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
-  callbackUrl.searchParams.set("next", currentPath);
+  // Build the callback URL - Supabase will append the code and other params
+  const callbackUrl = `${window.location.origin}/auth/callback`;
+  
+  // Store the redirect path in sessionStorage as a backup
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("oauth_redirect_path", currentPath);
+  }
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "twitter",
     options: {
-      redirectTo: callbackUrl.toString(),
+      redirectTo: callbackUrl,
+      queryParams: {
+        // Pass the redirect path as a query param that will be preserved
+        // Note: This might not work with all OAuth providers, so we also use sessionStorage
+        next: currentPath,
+      },
     },
   });
 
