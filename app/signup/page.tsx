@@ -28,8 +28,14 @@ function SignUpForm() {
   // Check for error in URL params
   useEffect(() => {
     const errorParam = searchParams.get("error");
+    const errorMessage = searchParams.get("message");
+    
     if (errorParam === "auth_failed") {
-      setError("Failed to authenticate with X. Please try again.");
+      setError(errorMessage 
+        ? `Authentication failed: ${decodeURIComponent(errorMessage)}` 
+        : "Failed to authenticate with X. Please check your Supabase configuration and try again.");
+    } else if (errorParam === "no_code") {
+      setError("No authorization code received. Please try signing in again.");
     }
   }, [searchParams]);
 
