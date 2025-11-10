@@ -42,37 +42,95 @@ function SignUpForm() {
   // Check if user is already authenticated (from OAuth callback)
   useEffect(() => {
     async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        // Check if user already has a profile
-        const profile = await getUserProfile(session.user.id);
-        if (profile) {
-          router.push(`/profile/${profile.x_username}`);
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Error getting session:", sessionError);
           return;
         }
 
-        // Try to get Twitter username from user metadata
-        const twitterUsername = session.user.user_metadata?.user_name || 
-                                session.user.user_metadata?.preferred_username ||
-                                session.user.user_metadata?.full_name?.split(" ")[0]?.replace("@", "");
-        
-        if (twitterUsername) {
-          setXHandle(twitterUsername);
-          setXConnected(true);
-          setFollowersCount(session.user.user_metadata?.followers_count || 0);
+        if (session?.user) {
+          // Check if user already has a profile
+          const profile = await getUserProfile(session.user.id);
+          if (profile) {
+            // Check if there's a redirect parameter in the URL
+            const redirectTo = searchParams.get("next");
+            // Also check sessionStorage as a fallback
+            const storedRedirect = typeof window !== "undefined" 
+              ? sessionStorage.getItem("oauth_redirect") 
+              : null;
+            
+            const finalRedirect = redirectTo && redirectTo !== "/signup" 
+              ? redirectTo 
+              : storedRedirect && storedRedirect !== "/signup"
+                ? storedRedirect
+                : null;
+            
+            // Clear the stored redirect
+            if (typeof window !== "undefined") {
+              sessionStorage.removeItem("oauth_redirect");
+            }
+            
+            if (finalRedirect) {
+              router.push(finalRedirect);
+            } else {
+              router.push(`/profile/${profile.x_username}`);
+            }
+            return;
+          }
+
+          // User is authenticated but doesn't have a profile yet
+          // Try to get Twitter username from user metadata
+          const twitterUsername = session.user.user_metadata?.user_name || 
+                                  session.user.user_metadata?.preferred_username ||
+                                  session.user.user_metadata?.full_name?.split(" ")[0]?.replace("@", "");
+          
+          if (twitterUsername) {
+            setXHandle(twitterUsername);
+            setXConnected(true);
+            setFollowersCount(session.user.user_metadata?.followers_count || 0);
+          }
         }
+      } catch (error) {
+        console.error("Error in checkAuth:", error);
       }
     }
+    
+    // Run immediately and also set up auth state listener
     checkAuth();
-  }, [router]);
+    
+    // Listen for auth state changes (important for OAuth callback)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        // Re-run checkAuth when auth state changes
+        checkAuth();
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router, searchParams]);
 
   const handleXConnect = async () => {
     setIsConnecting(true);
     setError("");
 
     try {
-      await signInWithTwitter();
+      // Get the current pathname to redirect back after OAuth
+      const currentPath = window.location.pathname + window.location.search;
+      
+      // Store the current path in sessionStorage as a backup
+      // This helps if the query parameter doesn't work
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("oauth_redirect", currentPath);
+      }
+      
+      // Start OAuth flow with redirect back to current page
+      await signInWithTwitter(currentPath);
       // User will be redirected to OAuth, then back to this page
+      // Note: setIsConnecting(false) won't run because the page will redirect
     } catch (err: any) {
       setError(err.message || "Failed to connect X account");
       setIsConnecting(false);

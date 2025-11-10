@@ -1,11 +1,18 @@
 import { supabase } from "@/lib/supabaseClient";
 import { User } from "@/lib/types";
 
-export async function signInWithTwitter() {
+export async function signInWithTwitter(redirectTo?: string) {
+  // Get the current page path if redirectTo is not provided
+  const currentPath = redirectTo || window.location.pathname;
+  
+  // Build the callback URL with the redirect parameter
+  const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+  callbackUrl.searchParams.set("next", currentPath);
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "twitter",
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: callbackUrl.toString(),
     },
   });
 
