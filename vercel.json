@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/fetch-wallet-data",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/deactivate-inactive-users",
