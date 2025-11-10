@@ -290,8 +290,8 @@ export default function ProfilePage({
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  No trade data available
+                <div className="h-[300px] flex items-center justify-center text-gray-400">
+                  No portfolio data available
                 </div>
               )}
             </CardContent>
@@ -364,7 +364,8 @@ export default function ProfilePage({
             )}
           </CardContent>
         </Card>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
