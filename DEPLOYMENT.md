@@ -68,22 +68,57 @@ This guide will walk you through deploying Goatscan to Vercel with Supabase as t
 
 3. **Configure Row Level Security (RLS)**
 
+   **Important**: You need policies that allow users to INSERT and UPDATE their own profiles.
+   
+   Run the SQL from `supabase-rls-policies.sql` in the Supabase SQL Editor, or use this:
+
    ```sql
    -- Enable RLS on users table
    ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+   -- Drop existing policies if they exist
+   DROP POLICY IF EXISTS "Public read access for active users" ON users;
+   DROP POLICY IF EXISTS "Users can insert their own profile" ON users;
+   DROP POLICY IF EXISTS "Users can update their own profile" ON users;
+   DROP POLICY IF EXISTS "Users can read their own profile" ON users;
 
    -- Allow public read access to active users
    CREATE POLICY "Public read access for active users"
      ON users FOR SELECT
      USING (active = true);
 
+   -- Allow authenticated users to read their own profile (even if inactive)
+   CREATE POLICY "Users can read their own profile"
+     ON users FOR SELECT
+     USING (auth.uid() = id);
+
+   -- Allow authenticated users to insert their own profile
+   CREATE POLICY "Users can insert their own profile"
+     ON users FOR INSERT
+     WITH CHECK (auth.uid() = id);
+
+   -- Allow authenticated users to update their own profile
+   CREATE POLICY "Users can update their own profile"
+     ON users FOR UPDATE
+     USING (auth.uid() = id)
+     WITH CHECK (auth.uid() = id);
+
    -- Enable RLS on trades table
    ALTER TABLE trades ENABLE ROW LEVEL SECURITY;
+
+   -- Drop existing policies if they exist
+   DROP POLICY IF EXISTS "Public read access for trades" ON trades;
+   DROP POLICY IF EXISTS "Users can insert their own trades" ON trades;
 
    -- Allow public read access to trades
    CREATE POLICY "Public read access for trades"
      ON trades FOR SELECT
      USING (true);
+
+   -- Allow authenticated users to insert trades for themselves
+   CREATE POLICY "Users can insert their own trades"
+     ON trades FOR INSERT
+     WITH CHECK (auth.uid() = user_id);
    ```
 
 4. **Set Up Twitter OAuth**
