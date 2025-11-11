@@ -183,7 +183,7 @@ export function Navbar() {
           </div>
 
           {/* Search trigger and input - only on leaderboard */}
-          {isLeaderboardPage && <div className="relative">
+          {isLeaderboardPage && <div className="relative hidden md:block">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -218,10 +218,9 @@ export function Navbar() {
             )}
           </div>}
 
-          {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            className="h-11 w-11 flex items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+            className="hidden md:flex h-11 w-11 items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           >
             {theme === "dark" ? (
@@ -230,45 +229,47 @@ export function Navbar() {
               <Moon className="h-4 w-4" />
             )}
           </button>
-          {loading ? (
-            <div className="h-9 w-24 animate-pulse rounded-md bg-gray-200 dark:bg-gray-800" />
-          ) : user ? (
-            <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
+            {loading ? (
+              <div className="h-9 w-24 animate-pulse rounded-md bg-gray-200 dark:bg-gray-800" />
+            ) : user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href={
+                    userProfile?.x_username
+                      ? `/profile/${userProfile.x_username}`
+                      : "/signup"
+                  }
+                  className="flex items-center gap-2 rounded-md px-3 text-sm font-medium text-gray-900 dark:text-white transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/80 min-h-[44px]"
+                >
+                  <UserIcon className="h-4 w-4 flex-shrink-0" />
+                  <span className="hidden sm:inline-block truncate max-w-[120px]">
+                    {displayName}
+                  </span>
+                  <span className="sm:hidden">
+                    {displayName?.startsWith("@") ? displayName.slice(0, 8) : "Profile"}
+                  </span>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="h-11 sm:h-8 px-2 sm:px-3 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  title="Log out"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline-block ml-2">Log Out</span>
+                </Button>
+              </div>
+            ) : (
               <Link
-                href={
-                  userProfile?.x_username
-                    ? `/profile/${userProfile.x_username}`
-                    : "/signup"
-                }
-                className="flex items-center gap-2 rounded-md px-3 text-sm font-medium text-gray-900 dark:text-white transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/80 min-h-[44px]"
+                href="/signup"
+                className="rounded-md bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700 min-h-[44px] flex items-center"
               >
-                <UserIcon className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden sm:inline-block truncate max-w-[120px]">
-                  {displayName}
-                </span>
-                <span className="sm:hidden">
-                  {displayName?.startsWith("@") ? displayName.slice(0, 8) : "Profile"}
-                </span>
+                Sign Up
               </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="h-11 sm:h-8 px-2 sm:px-3 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                title="Log out"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline-block ml-2">Log Out</span>
-              </Button>
-            </div>
-          ) : (
-            <Link
-              href="/signup"
-              className="rounded-md bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700 min-h-[44px] flex items-center"
-            >
-              Sign Up
-            </Link>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -292,24 +293,98 @@ export function Navbar() {
             >
               <div className="container mx-auto px-4 py-2">
                 <div className="divide-y divide-gray-200 dark:divide-gray-800">
-                  {navItems.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
+                  <div className="py-1">
+                    {navItems.map((item) => {
+                      const isActive = pathname === item.href;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={cn(
+                            "block py-3 text-base font-medium",
+                            isActive
+                              ? "text-gray-900 dark:text-white"
+                              : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  {isLeaderboardPage && (
+                    <div className="py-3">
+                      <input
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search @username or wallet..."
+                        className="w-full h-11 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 text-sm border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+                      />
+                      {query && (
+                        <button
+                          onClick={() => setQuery("")}
+                          className="mt-2 h-11 w-full text-sm rounded-md border border-gray-200 dark:border-gray-700 text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                        >
+                          Clear search
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <div className="py-2">
+                    <button
+                      onClick={() => {
+                        toggleTheme();
+                      }}
+                      className="w-full h-11 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                    >
+                      {theme === 'dark' ? (
+                        <div className="flex items-center gap-2"><Sun className="h-4 w-4" /><span>Light Mode</span></div>
+                      ) : (
+                        <div className="flex items-center gap-2"><Moon className="h-4 w-4" /><span>Dark Mode</span></div>
+                      )}
+                    </button>
+                  </div>
+                  <div className="py-2">
+                    {loading ? (
+                      <div className="h-9 w-full animate-pulse rounded-md bg-gray-200 dark:bg-gray-800" />
+                    ) : user ? (
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={
+                            userProfile?.x_username
+                              ? `/profile/${userProfile.x_username}`
+                              : "/signup"
+                          }
+                          onClick={() => setMobileOpen(false)}
+                          className="flex-1 h-11 flex items-center justify-center rounded-md border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
+                        >
+                          <UserIcon className="h-4 w-4 mr-2" />
+                          {displayName?.startsWith("@") ? displayName : "Profile"}
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setMobileOpen(false);
+                            handleLogout();
+                          }}
+                          className="h-11 px-3 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                        >
+                          <LogOut className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
                       <Link
-                        key={item.href}
-                        href={item.href}
+                        href="/signup"
                         onClick={() => setMobileOpen(false)}
-                        className={cn(
-                          "block py-3 text-base font-medium",
-                          isActive
-                            ? "text-gray-900 dark:text-white"
-                            : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                        )}
+                        className="w-full h-11 flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700"
                       >
-                        {item.label}
+                        Sign Up
                       </Link>
-                    );
-                  })}
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
