@@ -24,8 +24,10 @@ function applyThemeClass(theme: Theme) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("dark");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // Initialize from localStorage or prefers-color-scheme
     try {
       const stored = localStorage.getItem("theme");

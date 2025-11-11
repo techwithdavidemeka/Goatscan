@@ -160,29 +160,29 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center text-gray-400">Loading...</div>
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
       <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">GOAT Leaderboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">GOAT Leaderboard</h1>
           
           {/* Time Filter Tabs */}
-          <div className="flex gap-2 bg-gray-800/50 rounded-lg p-1">
+          <div className="flex gap-2 bg-gray-100 dark:bg-gray-800/50 rounded-lg p-1">
             {(["daily", "weekly", "monthly"] as TimeFilter[]).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setTimeFilter(filter)}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
                   timeFilter === filter
-                    ? "bg-gray-700 text-white"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -193,8 +193,8 @@ export default function LeaderboardPage() {
 
         {/* Leaderboard List */}
         {filteredLeaderboard.length === 0 ? (
-          <div className="text-center text-gray-400 py-12">
-            No traders found
+          <div className="text-center text-gray-500 dark:text-gray-400 py-12">
+            {query ? `No traders found matching "${query}"` : 'No traders found'}
           </div>
         ) : (
           <div className="space-y-2">
@@ -212,9 +212,15 @@ export default function LeaderboardPage() {
                 >
                   <Link href={`/profile/${trader.x_username}`}>
                     <div
-                      className={`rounded-lg border p-3 md:p-4 hover:bg-gray-800/70 transition-all cursor-pointer ${getRankStyle(
-                        index
-                      )}`}
+                      className={`rounded-lg border p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-all cursor-pointer ${
+                        index === 0
+                          ? "bg-gradient-to-r from-yellow-100/50 to-yellow-50/30 dark:from-yellow-600/20 dark:to-yellow-500/10 border-yellow-300 dark:border-yellow-500/30"
+                          : index === 1
+                          ? "bg-gradient-to-r from-gray-100/50 to-gray-50/30 dark:from-gray-400/20 dark:to-gray-300/10 border-gray-300 dark:border-gray-400/30"
+                          : index === 2
+                          ? "bg-gradient-to-r from-orange-100/50 to-orange-50/30 dark:from-orange-600/20 dark:to-orange-500/10 border-orange-300 dark:border-orange-600/30"
+                          : "bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700/50"
+                      }`}
                     >
                       <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
                         {/* Rank */}
@@ -225,12 +231,12 @@ export default function LeaderboardPage() {
                           <span
                             className={`text-sm md:text-base lg:text-lg font-bold ${
                               index === 0
-                                ? "text-yellow-500"
+                                ? "text-yellow-600 dark:text-yellow-500"
                                 : index === 1
-                                ? "text-gray-300"
+                                ? "text-gray-500 dark:text-gray-300"
                                 : index === 2
-                                ? "text-orange-500"
-                                : "text-gray-400"
+                                ? "text-orange-600 dark:text-orange-500"
+                                : "text-gray-500 dark:text-gray-400"
                             }`}
                           >
                             {index + 1}
@@ -246,7 +252,7 @@ export default function LeaderboardPage() {
                         {/* Username and Wallet */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 md:gap-2 mb-0.5">
-                            <span className="font-semibold text-xs md:text-sm lg:text-base text-white truncate">
+                            <span className="font-semibold text-xs md:text-sm lg:text-base text-gray-900 dark:text-white truncate">
                               {trader.x_username}
                             </span>
                             <a
@@ -254,7 +260,7 @@ export default function LeaderboardPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-gray-400 hover:text-blue-400 transition-colors flex-shrink-0"
+                              className="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors flex-shrink-0"
                               title={`View @${trader.x_username} on X`}
                             >
                               <svg
@@ -266,13 +272,13 @@ export default function LeaderboardPage() {
                               </svg>
                             </a>
                           </div>
-                          <div className="text-xs text-gray-400 font-mono">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                             {getShortWallet(trader.wallet_address)}
                           </div>
                         </div>
 
                         {/* Trade Count */}
-                        <div className="text-sm md:text-base text-gray-300 font-medium min-w-[50px] md:min-w-[60px] text-right">
+                        <div className="text-sm md:text-base text-gray-700 dark:text-gray-300 font-medium min-w-[50px] md:min-w-[60px] text-right">
                           {tradeCount.wins}/{tradeCount.total}
                         </div>
 
@@ -286,7 +292,7 @@ export default function LeaderboardPage() {
                             {isProfit ? "+" : ""}
                             {formatNumber(profitSol)} Sol
                           </div>
-                          <div className="text-xs md:text-sm text-gray-400 font-normal whitespace-nowrap">
+                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-normal whitespace-nowrap">
                             (${formatNumber(Math.abs(trader.total_profit_usd), 1)})
                           </div>
                         </div>

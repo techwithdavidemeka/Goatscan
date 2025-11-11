@@ -99,12 +99,20 @@ export function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const { query, setQuery, open, setOpen } = useSearch();
 
+  // Close search on click outside
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = () => setOpen(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [open, setOpen]);
+
   return (
-    <nav className="border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/60">
+    <nav className="border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
           <motion.span
-            className="text-2xl font-bold text-white"
+            className="text-2xl font-bold text-gray-900 dark:text-white"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -121,8 +129,8 @@ export function Navbar() {
                 className={cn(
                   "text-sm font-medium transition-colors",
                   isActive 
-                    ? "text-white" 
-                    : "text-gray-400 hover:text-white"
+                    ? "text-gray-900 dark:text-white" 
+                    : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                 )}
               >
                 {item.label}
@@ -133,21 +141,35 @@ export function Navbar() {
           {/* Search trigger and input */}
           <div className="relative">
             <button
-              onClick={() => setOpen(!open)}
-              className="h-9 w-9 flex items-center justify-center rounded-md text-gray-300 hover:text-white hover:bg-gray-800"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(!open);
+              }}
+              className="h-9 w-9 flex items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
               title="Search"
             >
               <Search className="h-4 w-4" />
             </button>
             {open && (
-              <div className="absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-800 rounded-md shadow-lg p-2">
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 z-50"
+              >
                 <input
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search @username or wallet..."
-                  className="w-full rounded-md bg-gray-800 text-white placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full rounded-md bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
                 />
+                {query && (
+                  <button
+                    onClick={() => setQuery('')}
+                    className="mt-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    Clear search
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -155,8 +177,8 @@ export function Navbar() {
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            className="h-9 w-9 flex items-center justify-center rounded-md text-gray-300 hover:text-white hover:bg-gray-800"
-            title="Toggle theme"
+            className="h-9 w-9 flex items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           >
             {theme === "dark" ? (
               <Sun className="h-4 w-4" />
@@ -165,7 +187,7 @@ export function Navbar() {
             )}
           </button>
           {loading ? (
-            <div className="h-9 w-24 animate-pulse rounded-md bg-gray-800" />
+            <div className="h-9 w-24 animate-pulse rounded-md bg-gray-200 dark:bg-gray-800" />
           ) : user ? (
             <div className="flex items-center gap-2">
               <Link
@@ -174,7 +196,7 @@ export function Navbar() {
                     ? `/profile/${userProfile.x_username}`
                     : "/signup"
                 }
-                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-800/80"
+                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-gray-900 dark:text-white transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/80"
               >
                 <UserIcon className="h-4 w-4 flex-shrink-0" />
                 <span className="hidden sm:inline-block truncate max-w-[120px]">
@@ -188,7 +210,7 @@ export function Navbar() {
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="h-8 px-2 sm:px-3 text-gray-300 hover:text-white hover:bg-gray-800"
+                className="h-8 px-2 sm:px-3 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                 title="Log out"
               >
                 <LogOut className="h-4 w-4" />
