@@ -232,19 +232,21 @@ export default function LeaderboardPage() {
                           {index === 0 && (
                             <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 flex-shrink-0" />
                           )}
-                          <span
-                            className={`text-sm md:text-base lg:text-lg font-bold ${
-                              index === 0
-                                ? "text-yellow-600 dark:text-yellow-500"
-                                : index === 1
-                                ? "text-gray-500 dark:text-gray-300"
-                                : index === 2
-                                ? "text-orange-600 dark:text-orange-500"
-                                : "text-gray-500 dark:text-gray-400"
-                            }`}
-                          >
-                            {index + 1}
-                          </span>
+                          {!(query && query.trim().length > 0) && (
+                            <span
+                              className={`text-sm md:text-base lg:text-lg font-bold ${
+                                index === 0
+                                  ? "text-yellow-600 dark:text-yellow-500"
+                                  : index === 1
+                                  ? "text-gray-500 dark:text-gray-300"
+                                  : index === 2
+                                  ? "text-orange-600 dark:text-orange-500"
+                                  : "text-gray-500 dark:text-gray-400"
+                              }`}
+                            >
+                              {index + 1}
+                            </span>
+                          )}
                         </div>
 
                         {/* Avatar */}
