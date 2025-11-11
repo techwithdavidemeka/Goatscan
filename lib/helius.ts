@@ -82,7 +82,7 @@ function normalizeSource(source?: string | null): string {
 // -------------------------
 // Price and Metadata Helpers
 // -------------------------
-async function getSolPriceUsd(): Promise<number> {
+export async function getSolPriceUsd(): Promise<number> {
   const now = Date.now();
   if (cachedSolPriceUsd && now - cachedSolPriceUsd.ts < SOL_PRICE_CACHE_TTL_MS) {
     return cachedSolPriceUsd.value;

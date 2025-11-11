@@ -1,9 +1,10 @@
-import { fetchWalletTransactions, parseTradesFromTransactions, ParsedTrade } from "./helius";
+import { fetchWalletTransactions, parseTradesFromTransactions, ParsedTrade, getSolPriceUsd } from "./helius";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Trade } from "@/lib/types";
 
 export interface WalletMetrics {
   totalProfitUsd: number;
+  totalProfitSol: number;
   pnlPercent: number;
   totalTrades: number;
   lastTradeTimestamp: string | null;
@@ -15,28 +16,39 @@ export async function calculateWalletMetrics(
   supabase: SupabaseClient
 ): Promise<WalletMetrics> {
   try {
-    // Fetch transactions from Helius
+    // Fetch transactions from Helius (covers Pump.fun and DEX swaps via events.source)
     const transactions = await fetchWalletTransactions(walletAddress);
     
     // Parse trades from transactions
     const parsedTrades = await parseTradesFromTransactions(transactions, walletAddress);
+
+    // Log inclusion by source (Pump.fun vs DEX)
+    const pumpTrades = parsedTrades.filter((t) => t.source === "pumpfun");
+    const dexTrades = parsedTrades.filter((t) => t.source !== "pumpfun");
+    console.log(`Parsed trades for ${walletAddress}: total=${parsedTrades.length}, pumpfun=${pumpTrades.length}, dex=${dexTrades.length}`);
     
     // Get existing trades from database to avoid duplicates
-    // Use timestamp and token_address as unique identifier if signature doesn't exist
+    // Prefer signature-based deduplication; fallback to timestamp+token_address
     const { data: existingTrades } = await supabase
       .from("trades")
-      .select("timestamp, token_address")
+      .select("timestamp, token_address, signature")
       .eq("user_id", userId);
     
-    const existingTradeKeys = new Set(
+    const existingSignatures = new Set(
+      existingTrades?.map((t: any) => t.signature).filter(Boolean) || []
+    );
+    const existingTimeAddrKeys = new Set(
       existingTrades?.map((t: any) => `${t.timestamp}_${t.token_address}`) || []
     );
     
     // Filter out existing trades and insert new ones
     const newTrades = parsedTrades.filter((trade) => {
+      if (trade.signature && existingSignatures.has(trade.signature)) return false;
       const tradeKey = `${trade.timestamp}_${trade.tokenAddress}`;
-      return !existingTradeKeys.has(tradeKey);
+      return !existingTimeAddrKeys.has(tradeKey);
     });
+
+    console.log(`Deduplication for ${walletAddress}: newTrades=${newTrades.length}, existing=${(existingTrades?.length)||0}`);
     
     if (newTrades.length > 0) {
       // Insert new trades - prefer including source/side/quantity if columns exist
@@ -82,6 +94,7 @@ export async function calculateWalletMetrics(
     if (!allTrades || allTrades.length === 0) {
       return {
         totalProfitUsd: 0,
+        totalProfitSol: 0,
         pnlPercent: 0,
         totalTrades: 0,
         lastTradeTimestamp: null,
@@ -99,6 +112,10 @@ export async function calculateWalletMetrics(
       0
     );
     
+    // Current SOL price for SOL-denominated PnL
+    const solPrice = await getSolPriceUsd();
+    const totalProfitSol = solPrice > 0 ? totalProfitUsd / solPrice : 0;
+
     // Calculate PnL percentage
     // PnL% = (Total Profit / Total Volume) * 100
     const pnlPercent = totalVolume > 0 
@@ -109,6 +126,7 @@ export async function calculateWalletMetrics(
     
     return {
       totalProfitUsd: Math.round(totalProfitUsd * 100) / 100,
+      totalProfitSol: Math.round(totalProfitSol * 10000) / 10000,
       pnlPercent: Math.round(pnlPercent * 100) / 100,
       totalTrades: allTrades.length,
       lastTradeTimestamp,
