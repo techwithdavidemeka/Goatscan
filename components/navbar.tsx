@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { getUserProfile } from "@/lib/supabase/auth";
@@ -124,6 +124,14 @@ export function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  // Close mobile menu on outside click
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handleClick = () => setMobileOpen(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [mobileOpen]);
 
   return (
     <nav className="border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
@@ -264,48 +272,50 @@ export function Navbar() {
         </div>
       </div>
 
-      <div className="md:hidden">
-        <div
-          className={cn(
-            "fixed inset-0 z-40 bg-black/40 transition-opacity",
-            mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          )}
-          onClick={() => setMobileOpen(false)}
-        />
-        <div
-          id="mobile-drawer"
-          className={cn(
-            "fixed top-0 right-0 z-50 h-full w-72 max-w-[80vw] transform transition-transform duration-300 ease-in-out",
-            "bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-xl",
-            mobileOpen ? "translate-x-0" : "translate-x-full"
-          )}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="p-4">
-            <div className="mb-2 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Navigation</div>
-            <div className="divide-y divide-gray-200 dark:divide-gray-800">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "block py-3 px-1 text-base font-medium",
-                      isActive
-                        ? "text-gray-900 dark:text-white"
-                        : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            id="mobile-drawer"
+            className="md:hidden fixed inset-x-0 top-16 z-40"
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            <motion.div
+              className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg origin-top overflow-hidden"
+              initial={{ scaleY: 0.98 }}
+              animate={{ scaleY: 1 }}
+              exit={{ scaleY: 0.98 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
+              <div className="container mx-auto px-4 py-2">
+                <div className="divide-y divide-gray-200 dark:divide-gray-800">
+                  {navItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={cn(
+                          "block py-3 text-base font-medium",
+                          isActive
+                            ? "text-gray-900 dark:text-white"
+                            : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
