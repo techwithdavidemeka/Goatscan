@@ -308,55 +308,59 @@ export default function ProfilePage({
           </CardHeader>
           <CardContent>
             {latestTrades.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-200 dark:border-gray-700">
-                    <TableHead className="text-gray-700 dark:text-gray-300">Token</TableHead>
-                    <TableHead className="text-gray-700 dark:text-gray-300">Amount (USD)</TableHead>
-                    <TableHead className="text-gray-700 dark:text-gray-300">Profit/Loss</TableHead>
-                    <TableHead className="text-gray-700 dark:text-gray-300">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {latestTrades.map((trade) => (
-                    <TableRow key={trade.id} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <TableCell className="font-medium text-gray-900 dark:text-white">
-                        {trade.token_symbol || "N/A"}
-                      </TableCell>
-                      <TableCell className="text-gray-700 dark:text-gray-300">
-                        ${trade.amount_usd.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={
-                            trade.profit_loss_usd >= 0
-                              ? "text-green-500 font-semibold"
-                              : "text-red-500 font-semibold"
-                          }
-                        >
-                          {trade.profit_loss_usd >= 0 ? "+" : ""}
-                          ${trade.profit_loss_usd.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-gray-700 dark:text-gray-300">
-                        {new Date(trade.timestamp).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+                <div className="min-w-[560px] sm:min-w-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-gray-200 dark:border-gray-700">
+                        <TableHead className="text-gray-700 dark:text-gray-300">Token</TableHead>
+                        <TableHead className="text-gray-700 dark:text-gray-300">Amount (USD)</TableHead>
+                        <TableHead className="text-gray-700 dark:text-gray-300">Profit/Loss</TableHead>
+                        <TableHead className="text-gray-700 dark:text-gray-300">Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {latestTrades.map((trade) => (
+                        <TableRow key={trade.id} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 min-h-[44px]">
+                          <TableCell className="font-medium text-gray-900 dark:text-white">
+                            {trade.token_symbol || "N/A"}
+                          </TableCell>
+                          <TableCell className="text-gray-700 dark:text-gray-300">
+                            ${trade.amount_usd.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={
+                                trade.profit_loss_usd >= 0
+                                  ? "text-green-500 font-semibold"
+                                  : "text-red-500 font-semibold"
+                              }
+                            >
+                              {trade.profit_loss_usd >= 0 ? "+" : ""}
+                              ${trade.profit_loss_usd.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-gray-700 dark:text-gray-300">
+                            {new Date(trade.timestamp).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             ) : (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 No trades found

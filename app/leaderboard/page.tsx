@@ -183,7 +183,7 @@ export default function LeaderboardPage() {
               <button
                 key={filter}
                 onClick={() => setTimeFilter(filter)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`h-11 px-4 text-sm font-medium rounded-md transition-all ${
                   timeFilter === filter
                     ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -201,7 +201,8 @@ export default function LeaderboardPage() {
             {query ? `No traders found matching "${query}"` : 'No traders found'}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="space-y-2 min-w-[640px] sm:min-w-0">
             {filteredLeaderboard.map((trader, index) => {
               const tradeCount = tradeCounts[trader.id] || { wins: 0, total: 0 };
               const profitSol = usdToSol(trader.total_profit_usd);
@@ -216,7 +217,7 @@ export default function LeaderboardPage() {
                 >
                   <Link href={`/profile/${trader.x_username}`}>
                     <div
-                      className={`rounded-lg border p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-all cursor-pointer ${
+                      className={`rounded-lg border p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-all cursor-pointer min-h-[56px] min-w-[600px] sm:min-w-0 ${
                         index === 0
                           ? "bg-gradient-to-r from-yellow-100/50 to-yellow-50/30 dark:from-yellow-600/20 dark:to-yellow-500/10 border-yellow-300 dark:border-yellow-500/30"
                           : index === 1
@@ -308,6 +309,7 @@ export default function LeaderboardPage() {
                 </motion.div>
               );
             })}
+            </div>
           </div>
         )}
       </div>

@@ -261,7 +261,7 @@ function SignUpForm() {
                     variant="outline"
                     onClick={handleXConnect}
                     disabled={isConnecting}
-                    className="w-full flex items-center justify-center space-x-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="w-full min-h-[44px] flex items-center justify-center space-x-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     {isConnecting ? (
                       <>
@@ -297,7 +297,7 @@ function SignUpForm() {
                     type="button"
                     variant="outline"
                     onClick={handleWalletConnect}
-                    className="w-full flex items-center justify-center space-x-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="w-full min-h-[44px] flex items-center justify-center space-x-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     <Wallet className="h-4 w-4" />
                     <span>Connect Wallet</span>
@@ -317,7 +317,7 @@ function SignUpForm() {
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={isSubmitting || !xConnected || !walletConnected}
               >
                 {isSubmitting ? (

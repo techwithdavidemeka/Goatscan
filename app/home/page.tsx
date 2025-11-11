@@ -54,7 +54,7 @@ export default function HomePage() {
           </p>
         </motion.div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3">
           {topTraders.map((trader, index) => (
             <motion.div
               key={trader.id}
@@ -63,7 +63,7 @@ export default function HomePage() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Link href={`/profile/${trader.x_username}`}>
-                <Card className="hover:shadow-xl transition-all cursor-pointer bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70">
+                <Card className="hover:shadow-xl transition-all cursor-pointer bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70 min-h-[140px]">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-xl text-gray-900 dark:text-white">@{trader.x_username}</CardTitle>
