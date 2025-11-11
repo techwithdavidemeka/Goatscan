@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { getUserProfile } from "@/lib/supabase/auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, User as UserIcon, Sun, Moon, Search } from "lucide-react";
+import { LogOut, User as UserIcon, Sun, Moon, Search, Menu, X } from "lucide-react";
 import { useTheme } from "@/lib/ui/theme";
 import { useSearch } from "@/lib/ui/search-context";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -20,6 +20,7 @@ export function Navbar() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
   
   // Only show search on leaderboard page
   const isLeaderboardPage = pathname === '/leaderboard';
@@ -110,6 +111,20 @@ export function Navbar() {
     return () => document.removeEventListener('click', handleClick);
   }, [open, setOpen]);
 
+  // Close mobile drawer on Escape key
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // Close mobile drawer on route/path change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   return (
     <nav className="border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -123,7 +138,7 @@ export function Navbar() {
           </motion.span>
         </Link>
         <div className="flex items-center space-x-1 sm:space-x-3 md:space-x-6">
-          <div className="hidden sm:flex items-center space-x-3 md:space-x-6">
+          <div className="hidden md:flex items-center space-x-3 md:space-x-6">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -143,11 +158,20 @@ export function Navbar() {
             })}
           </div>
           
-          {/* Mobile menu button placeholder - can be added later if needed */}
-          <div className="sm:hidden flex items-center">
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {navItems.find(item => item.href === pathname)?.label || 'Goatscan'}
-            </span>
+          <div className="md:hidden flex items-center">
+            <button
+              aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-drawer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMobileOpen((v) => !v);
+              }}
+              className="h-11 w-11 flex items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+              title="Menu"
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
 
           {/* Search trigger and input - only on leaderboard */}
@@ -237,6 +261,49 @@ export function Navbar() {
               Sign Up
             </Link>
           )}
+        </div>
+      </div>
+
+      <div className="md:hidden">
+        <div
+          className={cn(
+            "fixed inset-0 z-40 bg-black/40 transition-opacity",
+            mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          )}
+          onClick={() => setMobileOpen(false)}
+        />
+        <div
+          id="mobile-drawer"
+          className={cn(
+            "fixed top-0 right-0 z-50 h-full w-72 max-w-[80vw] transform transition-transform duration-300 ease-in-out",
+            "bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-xl",
+            mobileOpen ? "translate-x-0" : "translate-x-full"
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-4">
+            <div className="mb-2 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Navigation</div>
+            <div className="divide-y divide-gray-200 dark:divide-gray-800">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "block py-3 px-1 text-base font-medium",
+                      isActive
+                        ? "text-gray-900 dark:text-white"
+                        : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </nav>
