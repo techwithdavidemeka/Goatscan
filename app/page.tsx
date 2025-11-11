@@ -127,7 +127,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100/50 dark:from-gray-900 dark:to-gray-800/50 py-20 md:py-32">
+      <section className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100/50 dark:from-gray-900 dark:to-gray-800/50 py-16 sm:py-20 md:py-32">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -139,7 +139,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent leading-tight"
             >
               Track the best meme coin traders on X
             </motion.h1>
@@ -147,7 +147,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-8"
+              className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-6 sm:mb-8"
             >
               powered by <span className="font-bold text-gray-900 dark:text-white">Goatscan</span>
             </motion.p>
@@ -159,10 +159,11 @@ export default function LandingPage() {
               <Link href="/signup">
                 <Button
                   size="lg"
-                  className="text-lg px-8 py-6 h-auto group bg-blue-600 hover:bg-blue-700 text-white"
+                  className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 h-auto min-h-[44px] group bg-blue-600 hover:bg-blue-700 text-white touch-manipulation"
                 >
-                  Connect your wallet + X to join
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  <span className="hidden sm:inline">Connect your wallet + X to join</span>
+                  <span className="sm:hidden">Connect wallet + X</span>
+                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </motion.div>
@@ -171,19 +172,19 @@ export default function LandingPage() {
       </section>
 
       {/* Top 3 Traders Section */}
-      <section className="py-16 bg-white dark:bg-gray-900">
+      <section className="py-12 sm:py-16 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">
               Top Traders
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400">
               See who's leading the pack
             </p>
           </motion.div>
@@ -191,7 +192,7 @@ export default function LandingPage() {
           {loading ? (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">Loading top traders...</div>
           ) : topTraders.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-3 max-w-5xl mx-auto">
               {topTraders.map((trader, index) => {
                 const rankColors = [
                   "text-yellow-500",
@@ -214,60 +215,60 @@ export default function LandingPage() {
                   >
                     <Link href={`/profile/${trader.x_username}`}>
                       <Card
-                        className={`hover:shadow-xl transition-all duration-300 cursor-pointer h-full bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70 ${
+                        className={`hover:shadow-xl transition-all duration-300 cursor-pointer h-full bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70 active:bg-gray-100 dark:active:bg-gray-700/80 touch-manipulation ${
                           rankBgColors[index]
                         }`}
                       >
-                        <CardHeader>
-                          <div className="flex items-center justify-between mb-4">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between mb-3">
                             <div
-                              className={`text-4xl font-bold ${rankColors[index]}`}
+                              className={`text-3xl sm:text-4xl font-bold ${rankColors[index]}`}
                             >
                               #{index + 1}
                             </div>
                             {index < 3 && (
                               <Trophy
-                                className={`h-8 w-8 ${rankColors[index]}`}
+                                className={`h-6 w-6 sm:h-8 sm:w-8 ${rankColors[index]}`}
                               />
                             )}
                           </div>
-                          <CardTitle className="text-2xl text-gray-900 dark:text-white">
+                          <CardTitle className="text-xl sm:text-2xl text-gray-900 dark:text-white truncate leading-tight">
                             @{trader.x_username}
                           </CardTitle>
                           {trader.followers_count > 0 && (
-                            <CardDescription className="text-gray-600 dark:text-gray-400">
+                            <CardDescription className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                               {trader.followers_count.toLocaleString()} followers
                             </CardDescription>
                           )}
                         </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
+                        <CardContent className="pt-0">
+                          <div className="space-y-2 sm:space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                                 PnL
                               </span>
                               <span
-                                className={`font-bold text-lg ${
+                                className={`font-bold text-base sm:text-lg ${
                                   trader.pnl_percent >= 0
                                     ? "text-green-500"
                                     : "text-red-500"
                                 }`}
                               >
                                 {trader.pnl_percent >= 0 ? (
-                                  <TrendingUp className="inline h-4 w-4 mr-1" />
+                                  <TrendingUp className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                 ) : (
-                                  <TrendingDown className="inline h-4 w-4 mr-1" />
+                                  <TrendingDown className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                 )}
                                 {trader.pnl_percent > 0 ? "+" : ""}
                                 {trader.pnl_percent.toFixed(2)}%
                               </span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                                 Total Profit
                               </span>
                               <span
-                                className={`font-semibold ${
+                                className={`font-semibold text-sm sm:text-base ${
                                   trader.total_profit_usd >= 0
                                     ? "text-green-500"
                                     : "text-red-500"
@@ -284,10 +285,10 @@ export default function LandingPage() {
                               </span>
                             </div>
                             <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                                 Total Trades
                               </span>
-                              <span className="font-semibold text-gray-900 dark:text-white">
+                              <span className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
                                 {trader.total_trades}
                               </span>
                             </div>
@@ -308,24 +309,24 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-800/30">
+      <section className="py-12 sm:py-16 bg-gray-50 dark:bg-gray-800/30">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">
               How It Works
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400">
+            <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400">
               Get started in 4 simple steps
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
             {howItWorksSteps.map((step, index) => {
               const Icon = step.icon;
               return (
@@ -336,20 +337,20 @@ export default function LandingPage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <Card className="h-full hover:shadow-lg transition-shadow bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70">
-                    <CardHeader>
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-500/10">
-                          <Icon className={`h-6 w-6 ${step.color}`} />
+                  <Card className="h-full hover:shadow-lg transition-shadow bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70 active:bg-gray-100 dark:active:bg-gray-700/80 touch-manipulation">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                        <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500/10">
+                          <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${step.color}`} />
                         </div>
-                        <div className="text-2xl font-bold text-gray-500 dark:text-gray-400">
+                        <div className="text-xl sm:text-2xl font-bold text-gray-500 dark:text-gray-400">
                           {step.step}
                         </div>
                       </div>
-                      <CardTitle className="text-xl text-gray-900 dark:text-white">{step.title}</CardTitle>
+                      <CardTitle className="text-lg sm:text-xl text-gray-900 dark:text-white leading-tight">{step.title}</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-base text-gray-600 dark:text-gray-400">
+                    <CardContent className="pt-0">
+                      <CardDescription className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                         {step.description}
                       </CardDescription>
                     </CardContent>
@@ -364,12 +365,12 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-center mt-12"
+            className="text-center mt-8 sm:mt-12"
           >
             <Link href="/signup">
-              <Button size="lg" className="text-lg px-8 py-6 h-auto bg-blue-600 hover:bg-blue-700 text-white">
+              <Button size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6 h-auto min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white touch-manipulation">
                 Get Started Now
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
           </motion.div>
@@ -377,7 +378,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer CTA */}
-      <section className="py-16 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+      <section className="py-12 sm:py-16 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -385,14 +386,14 @@ export default function LandingPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h3 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
+            <h3 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">
               Ready to join the leaderboard?
             </h3>
-            <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-6">
               Connect your wallet and X account to start tracking your trades
             </p>
             <Link href="/signup">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6 h-auto border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
+              <Button size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6 h-auto min-h-[44px] border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 touch-manipulation">
                 Sign Up Now
               </Button>
             </Link>

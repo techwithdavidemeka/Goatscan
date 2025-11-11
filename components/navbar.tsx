@@ -122,24 +122,33 @@ export function Navbar() {
             🐐 Goatscan
           </motion.span>
         </Link>
-        <div className="flex items-center space-x-3 sm:space-x-6">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "text-sm font-medium transition-colors h-11 px-2 flex items-center rounded-md",
-                  isActive 
-                    ? "text-gray-900 dark:text-white" 
-                    : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+        <div className="flex items-center space-x-1 sm:space-x-3 md:space-x-6">
+          <div className="hidden sm:flex items-center space-x-3 md:space-x-6">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "text-sm font-medium transition-colors h-11 px-2 flex items-center rounded-md",
+                    isActive 
+                      ? "text-gray-900 dark:text-white" 
+                      : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+          
+          {/* Mobile menu button placeholder - can be added later if needed */}
+          <div className="sm:hidden flex items-center">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {navItems.find(item => item.href === pathname)?.label || 'Goatscan'}
+            </span>
+          </div>
 
           {/* Search trigger and input - only on leaderboard */}
           {isLeaderboardPage && <div className="relative">

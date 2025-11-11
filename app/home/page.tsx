@@ -54,7 +54,7 @@ export default function HomePage() {
           </p>
         </motion.div>
 
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {topTraders.map((trader, index) => (
             <motion.div
               key={trader.id}
@@ -63,41 +63,41 @@ export default function HomePage() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Link href={`/profile/${trader.x_username}`}>
-                <Card className="hover:shadow-xl transition-all cursor-pointer bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70 min-h-[140px]">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl text-gray-900 dark:text-white">@{trader.x_username}</CardTitle>
-                      <div className="flex items-center space-x-1 text-green-500">
+                <Card className="hover:shadow-xl transition-all cursor-pointer bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70 active:bg-gray-100 dark:active:bg-gray-700/80 touch-manipulation">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-lg sm:text-xl text-gray-900 dark:text-white truncate leading-tight">@{trader.x_username}</CardTitle>
+                      <div className="flex items-center space-x-1 text-green-500 flex-shrink-0">
                         <TrendingUp className="h-4 w-4" />
-                        <span className="font-semibold">
+                        <span className="font-semibold text-sm sm:text-base">
                           {trader.pnl_percent > 0 ? "+" : ""}
                           {trader.pnl_percent.toFixed(2)}%
                         </span>
                       </div>
                     </div>
-                    <CardDescription className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                      {trader.wallet_address.slice(0, 8)}...{trader.wallet_address.slice(-8)}
+                    <CardDescription className="font-mono text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {trader.wallet_address.slice(0, 6)}...{trader.wallet_address.slice(-4)}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
+                  <CardContent className="pt-0">
+                    <div className="space-y-2 sm:space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Total Trades</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{trader.total_trades}</span>
+                        <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Trades</span>
+                        <span className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">{trader.total_trades}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Win Rate</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">
+                        <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Win Rate</span>
+                        <span className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
                           {winRates[trader.id]?.toFixed(1) || "0.0"}%
                         </span>
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-                          <DollarSign className="h-4 w-4 mr-1" />
+                        <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           PnL
                         </span>
                         <span
-                          className={`font-bold text-lg ${
+                          className={`font-bold text-base sm:text-lg ${
                             trader.pnl_percent >= 0 ? "text-green-500" : "text-red-500"
                           }`}
                         >

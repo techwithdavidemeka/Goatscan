@@ -178,20 +178,22 @@ export default function LeaderboardPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">GOAT Leaderboard</h1>
           
           {/* Time Filter Tabs */}
-          <div className="flex gap-2 bg-gray-100 dark:bg-gray-800/50 rounded-lg p-1">
-            {(["daily", "weekly", "monthly"] as TimeFilter[]).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setTimeFilter(filter)}
-                className={`h-11 px-4 text-sm font-medium rounded-md transition-all ${
-                  timeFilter === filter
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
-              >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </button>
-            ))}
+          <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+            <div className="flex gap-2 bg-gray-100 dark:bg-gray-800/50 rounded-lg p-1 min-w-max">
+              {(["daily", "weekly", "monthly"] as TimeFilter[]).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setTimeFilter(filter)}
+                  className={`h-11 px-4 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
+                    timeFilter === filter
+                      ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -201,8 +203,7 @@ export default function LeaderboardPage() {
             {query ? `No traders found matching "${query}"` : 'No traders found'}
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="space-y-2 min-w-[640px] sm:min-w-0">
+          <div className="space-y-2">
             {filteredLeaderboard.map((trader, index) => {
               const tradeCount = tradeCounts[trader.id] || { wins: 0, total: 0 };
               const profitSol = usdToSol(trader.total_profit_usd);
@@ -217,7 +218,7 @@ export default function LeaderboardPage() {
                 >
                   <Link href={`/profile/${trader.x_username}`}>
                     <div
-                      className={`rounded-lg border p-3 md:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-all cursor-pointer min-h-[56px] min-w-[600px] sm:min-w-0 ${
+                      className={`rounded-lg border p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 active:bg-gray-100 dark:active:bg-gray-700/80 transition-all cursor-pointer min-h-[60px] sm:min-h-[56px] touch-manipulation ${
                         index === 0
                           ? "bg-gradient-to-r from-yellow-100/50 to-yellow-50/30 dark:from-yellow-600/20 dark:to-yellow-500/10 border-yellow-300 dark:border-yellow-500/30"
                           : index === 1
@@ -227,7 +228,7 @@ export default function LeaderboardPage() {
                           : "bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700/50"
                       }`}
                     >
-                      <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
+                      <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
                         {/* Rank */}
                         <div className="flex items-center gap-1.5 min-w-[40px] md:min-w-[50px]">
                           {index === 0 && !(query && query.trim().length > 0) && (
@@ -253,13 +254,13 @@ export default function LeaderboardPage() {
                         {/* Avatar */}
                         <Avatar
                           username={trader.x_username}
-                          className="w-9 h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 flex-shrink-0"
+                          className="w-10 h-10 sm:w-10 sm:h-10 lg:w-12 lg:h-12 flex-shrink-0"
                         />
 
                         {/* Username and Wallet */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 md:gap-2 mb-0.5">
-                            <span className="font-semibold text-xs md:text-sm lg:text-base text-gray-900 dark:text-white truncate">
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5">
+                            <span className="font-semibold text-sm sm:text-sm lg:text-base text-gray-900 dark:text-white truncate">
                               {trader.x_username}
                             </span>
                             <a
@@ -267,11 +268,11 @@ export default function LeaderboardPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors flex-shrink-0"
+                              className="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800/50"
                               title={`View @${trader.x_username} on X`}
                             >
                               <svg
-                                className="w-3.5 h-3.5 md:w-4 md:h-4"
+                                className="w-4 h-4 sm:w-4 sm:h-4"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                               >
@@ -279,28 +280,29 @@ export default function LeaderboardPage() {
                               </svg>
                             </a>
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                          <div className="text-xs sm:text-xs text-gray-500 dark:text-gray-400 font-mono truncate">
                             {getShortWallet(trader.wallet_address)}
                           </div>
                         </div>
 
                         {/* Trade Count */}
-                        <div className="text-sm md:text-base text-gray-700 dark:text-gray-300 font-medium min-w-[50px] md:min-w-[60px] text-right">
-                          {tradeCount.wins}/{tradeCount.total}
+                        <div className="text-sm sm:text-sm text-gray-700 dark:text-gray-300 font-medium min-w-[60px] sm:min-w-[60px] text-right">
+                          <span className="hidden xs:inline">{tradeCount.wins}/{tradeCount.total}</span>
+                          <span className="xs:hidden">{tradeCount.wins}/{tradeCount.total}</span>
                         </div>
 
                         {/* PnL */}
                         <div
-                          className={`text-sm md:text-base font-bold text-right min-w-[120px] md:min-w-[180px] ${
+                          className={`text-sm sm:text-sm font-bold text-right min-w-[100px] sm:min-w-[140px] lg:min-w-[180px] ${
                             isProfit ? "text-green-500" : "text-red-500"
                           }`}
                         >
-                          <div className="whitespace-nowrap">
+                          <div className="whitespace-nowrap text-xs sm:text-sm">
                             {isProfit ? "+" : ""}
                             {formatNumber(profitSol)} Sol
                           </div>
-                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-normal whitespace-nowrap">
-                            (${formatNumber(Math.abs(trader.total_profit_usd), 1)})
+                          <div className="text-xs sm:text-xs text-gray-500 dark:text-gray-400 font-normal whitespace-nowrap">
+                            ${formatNumber(Math.abs(trader.total_profit_usd), 1)}
                           </div>
                         </div>
                       </div>
@@ -309,7 +311,6 @@ export default function LeaderboardPage() {
                 </motion.div>
               );
             })}
-            </div>
           </div>
         )}
       </div>
