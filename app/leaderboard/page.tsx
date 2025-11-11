@@ -7,6 +7,7 @@ import { getLeaderboard, getUserTrades } from "@/lib/supabase/queries";
 import { User } from "@/lib/types";
 import { Trophy } from "lucide-react";
 import { getXProfileUrl, getXAvatarUrl, getDefaultAvatarUrl } from "@/lib/x-profile";
+import { useSearch } from "@/lib/ui/search-context";
 
 type TimeFilter = "daily" | "weekly" | "monthly";
 
@@ -69,6 +70,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("daily");
   const [tradeCounts, setTradeCounts] = useState<Record<string, { wins: number; total: number }>>({});
+  const { query } = useSearch();
 
   useEffect(() => {
     async function fetchData() {
@@ -111,9 +113,19 @@ export default function LeaderboardPage() {
       });
     }
 
+    // Apply search filtering by x_username or wallet_address (partial matches)
+    if (query && query.trim().length > 0) {
+      const q = query.trim().toLowerCase().replace(/^@/, "");
+      filtered = filtered.filter((u) => {
+        const uname = (u.x_username || "").toLowerCase().replace(/^@/, "");
+        const wallet = (u.wallet_address || "").toLowerCase();
+        return uname.includes(q) || wallet.includes(q);
+      });
+    }
+
     // Sort by total profit USD descending
     return filtered.sort((a, b) => b.total_profit_usd - a.total_profit_usd);
-  }, [leaderboard, timeFilter]);
+  }, [leaderboard, timeFilter, query]);
 
   // Helper function to get short wallet identifier (6 characters like "2kv8X2")
   const getShortWallet = (address: string) => {

@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabaseClient";
 import { getUserProfile } from "@/lib/supabase/auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, User as UserIcon, Sun, Moon, Search } from "lucide-react";
+import { useTheme } from "@/lib/ui/theme";
+import { useSearch } from "@/lib/ui/search-context";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { User as AppUser } from "@/lib/types";
 
@@ -94,6 +96,9 @@ export function Navbar() {
 
   const displayName = getDisplayName();
 
+  const { theme, toggleTheme } = useTheme();
+  const { query, setQuery, open, setOpen } = useSearch();
+
   return (
     <nav className="border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -124,6 +129,41 @@ export function Navbar() {
               </Link>
             );
           })}
+
+          {/* Search trigger and input */}
+          <div className="relative">
+            <button
+              onClick={() => setOpen(!open)}
+              className="h-9 w-9 flex items-center justify-center rounded-md text-gray-300 hover:text-white hover:bg-gray-800"
+              title="Search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            {open && (
+              <div className="absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-800 rounded-md shadow-lg p-2">
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search @username or wallet..."
+                  className="w-full rounded-md bg-gray-800 text-white placeholder-gray-400 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="h-9 w-9 flex items-center justify-center rounded-md text-gray-300 hover:text-white hover:bg-gray-800"
+            title="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </button>
           {loading ? (
             <div className="h-9 w-24 animate-pulse rounded-md bg-gray-800" />
           ) : user ? (
