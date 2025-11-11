@@ -93,8 +93,8 @@ export default function LeaderboardPage() {
     fetchData();
   }, []);
 
-  // Filter by time period
-  const filteredLeaderboard = useMemo(() => {
+  // Filter by time period and sort - this creates the base ranked list
+  const rankedLeaderboard = useMemo(() => {
     let filtered = [...leaderboard];
 
     if (timeFilter !== "daily") {
@@ -113,19 +113,23 @@ export default function LeaderboardPage() {
       });
     }
 
-    // Apply search filtering by x_username or wallet_address (partial matches)
-    if (query && query.trim().length > 0) {
-      const q = query.trim().toLowerCase().replace(/^@/, "");
-      filtered = filtered.filter((u) => {
-        const uname = (u.x_username || "").toLowerCase().replace(/^@/, "");
-        const wallet = (u.wallet_address || "").toLowerCase();
-        return uname.includes(q) || wallet.includes(q);
-      });
+    // Sort by total profit USD descending to establish ranks
+    return filtered.sort((a, b) => b.total_profit_usd - a.total_profit_usd);
+  }, [leaderboard, timeFilter]);
+
+  // Apply search filter WITHOUT re-sorting - preserves original ranks
+  const filteredLeaderboard = useMemo(() => {
+    if (!query || query.trim().length === 0) {
+      return rankedLeaderboard;
     }
 
-    // Sort by total profit USD descending
-    return filtered.sort((a, b) => b.total_profit_usd - a.total_profit_usd);
-  }, [leaderboard, timeFilter, query]);
+    const q = query.trim().toLowerCase().replace(/^@/, "");
+    return rankedLeaderboard.filter((u) => {
+      const uname = (u.x_username || "").toLowerCase().replace(/^@/, "");
+      const wallet = (u.wallet_address || "").toLowerCase();
+      return uname.includes(q) || wallet.includes(q);
+    });
+  }, [rankedLeaderboard, query]);
 
   // Helper function to get short wallet identifier (6 characters like "2kv8X2")
   const getShortWallet = (address: string) => {

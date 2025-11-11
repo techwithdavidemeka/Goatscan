@@ -20,6 +20,9 @@ export function Navbar() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Only show search on leaderboard page
+  const isLeaderboardPage = pathname === '/leaderboard';
 
   const navItems = [
     { href: "/home", label: "Home" },
@@ -138,8 +141,8 @@ export function Navbar() {
             );
           })}
 
-          {/* Search trigger and input */}
-          <div className="relative">
+          {/* Search trigger and input - only on leaderboard */}
+          {isLeaderboardPage && <div className="relative">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -172,7 +175,7 @@ export function Navbar() {
                 )}
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Theme toggle */}
           <button

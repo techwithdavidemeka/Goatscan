@@ -35,21 +35,21 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center text-gray-400">Loading...</div>
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
       </div>
     );
   }
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-4xl font-bold mb-2 text-white">Top Traders Overview</h1>
-          <p className="text-gray-400 mb-8">
+          <h1 className="text-4xl font-bold mb-2 text-gray-900 dark:text-white">Top Traders Overview</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
             Discover the most successful Solana traders on the platform
           </p>
         </motion.div>
@@ -63,10 +63,10 @@ export default function HomePage() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Link href={`/profile/${trader.x_username}`}>
-                <Card className="hover:shadow-xl transition-all cursor-pointer bg-gray-800/50 border-gray-700 hover:bg-gray-800/70">
+                <Card className="hover:shadow-xl transition-all cursor-pointer bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/70">
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl text-white">@{trader.x_username}</CardTitle>
+                      <CardTitle className="text-xl text-gray-900 dark:text-white">@{trader.x_username}</CardTitle>
                       <div className="flex items-center space-x-1 text-green-500">
                         <TrendingUp className="h-4 w-4" />
                         <span className="font-semibold">
@@ -75,24 +75,24 @@ export default function HomePage() {
                         </span>
                       </div>
                     </div>
-                    <CardDescription className="font-mono text-xs text-gray-400">
+                    <CardDescription className="font-mono text-xs text-gray-500 dark:text-gray-400">
                       {trader.wallet_address.slice(0, 8)}...{trader.wallet_address.slice(-8)}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Total Trades</span>
-                        <span className="font-semibold text-white">{trader.total_trades}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Total Trades</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{trader.total_trades}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Win Rate</span>
-                        <span className="font-semibold text-white">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Win Rate</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
                           {winRates[trader.id]?.toFixed(1) || "0.0"}%
                         </span>
                       </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-700">
-                        <span className="text-sm text-gray-400 flex items-center">
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
                           <DollarSign className="h-4 w-4 mr-1" />
                           PnL
                         </span>
