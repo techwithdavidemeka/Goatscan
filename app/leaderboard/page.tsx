@@ -229,7 +229,7 @@ export default function LeaderboardPage() {
                       <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
                         {/* Rank */}
                         <div className="flex items-center gap-1.5 min-w-[40px] md:min-w-[50px]">
-                          {index === 0 && (
+                          {index === 0 && !(query && query.trim().length > 0) && (
                             <Trophy className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 flex-shrink-0" />
                           )}
                           {!(query && query.trim().length > 0) && (
