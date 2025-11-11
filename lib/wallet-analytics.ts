@@ -39,22 +39,36 @@ export async function calculateWalletMetrics(
     });
     
     if (newTrades.length > 0) {
-      // Insert new trades
-      const tradesToInsert = newTrades.map((trade) => ({
+      // Insert new trades - prefer including source/side/quantity if columns exist
+      const tradesWithExtended = newTrades.map((trade) => ({
         user_id: userId,
         token_symbol: trade.tokenSymbol,
         token_address: trade.tokenAddress,
         amount_usd: trade.amountUsd,
         profit_loss_usd: trade.profitLossUsd,
         timestamp: trade.timestamp,
+        source: trade.source, // optional column
+        side: trade.side, // optional column
+        quantity: trade.quantity, // optional column
+        signature: trade.signature, // optional column for idempotency
       }));
-      
-      const { error: insertError } = await supabase
-        .from("trades")
-        .insert(tradesToInsert);
-      
-      if (insertError) {
-        console.error("Error inserting trades:", insertError);
+
+      // First attempt with extended columns; if it fails, retry with minimal set
+      const insertAttempt = await supabase.from("trades").insert(tradesWithExtended);
+      if (insertAttempt.error) {
+        console.warn("Insert with extended columns failed, retrying with minimal set:", insertAttempt.error.message);
+        const tradesMinimal = newTrades.map((trade) => ({
+          user_id: userId,
+          token_symbol: trade.tokenSymbol,
+          token_address: trade.tokenAddress,
+          amount_usd: trade.amountUsd,
+          profit_loss_usd: trade.profitLossUsd,
+          timestamp: trade.timestamp,
+        }));
+        const retry = await supabase.from("trades").insert(tradesMinimal);
+        if (retry.error) {
+          console.error("Error inserting trades:", retry.error);
+        }
       }
     }
     
