@@ -137,34 +137,44 @@ export default function ProfilePage({
   // Latest trades for table (limit to 10)
   const latestTrades = trades.slice(0, 10);
 
+  // Helper function to truncate wallet address
+  const truncateWallet = (address: string) => {
+    if (address.length <= 12) return address;
+    return `${address.slice(0, 6)}...${address.slice(-6)}`;
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           {/* Trader Info Header */}
-          <div className="mb-8">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center space-x-3 mb-2">
-                  <h1 className="text-4xl font-bold text-gray-900 dark:text-white">@{trader.x_username}</h1>
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white break-words">
+                    @{trader.x_username}
+                  </h1>
                   {!isActive && (
-                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Inactive</Badge>
+                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 w-fit">
+                      Inactive
+                    </Badge>
                   )}
                 </div>
-                <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-400">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm sm:text-base text-gray-600 dark:text-gray-400">
                   {trader.followers_count > 0 && (
-                    <div className="flex items-center space-x-1">
-                      <Users className="h-4 w-4" />
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-4 w-4 flex-shrink-0" />
                       <span>{trader.followers_count.toLocaleString()} followers</span>
                     </div>
                   )}
                   {trader.last_trade_timestamp && (
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-4 w-4" />
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-4 w-4 flex-shrink-0" />
                       <span>
                         Last active:{" "}
                         {new Date(trader.last_trade_timestamp).toLocaleDateString()}
@@ -174,16 +184,19 @@ export default function ProfilePage({
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Wallet className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-              <div className="font-mono text-sm bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-3 rounded-md inline-block text-gray-900 dark:text-white">
-                {trader.wallet_address}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Wallet className="h-4 w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <div className="font-mono text-xs sm:text-sm bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-2 sm:px-3 py-2 rounded-md text-gray-900 dark:text-white break-all sm:break-normal">
+                  <span className="hidden sm:inline">{trader.wallet_address}</span>
+                  <span className="sm:hidden">{truncateWallet(trader.wallet_address)}</span>
+                </div>
               </div>
               <a
                 href={`https://solscan.io/account/${trader.wallet_address}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline text-sm ml-2"
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline text-xs sm:text-sm whitespace-nowrap"
               >
                 View on Solscan →
               </a>
@@ -191,7 +204,7 @@ export default function ProfilePage({
           </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -201,15 +214,15 @@ export default function ProfilePage({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Card className="bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Card className="bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 h-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       {stat.label}
                     </CardTitle>
-                    <Icon className={`h-4 w-4 ${stat.color}`} />
+                    <Icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${stat.color} flex-shrink-0`} />
                   </CardHeader>
-                  <CardContent>
-                    <div className={`text-2xl font-bold ${stat.color}`}>
+                  <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                    <div className={`text-xl sm:text-2xl font-bold ${stat.color} break-words`}>
                       {stat.value}
                     </div>
                   </CardContent>
@@ -220,39 +233,51 @@ export default function ProfilePage({
         </div>
 
         {/* Charts */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Profit/Loss Over Time */}
           <Card className="bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Profit/Loss Over Time</CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-white">
+                Profit/Loss Over Time
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 Cumulative profit and loss from trades
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               {profitLossData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={profitLossData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value: number) => [
-                        `$${value.toFixed(2)}`,
-                        "Cumulative P&L",
-                      ]}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="cumulativeProfit"
-                      stroke={trader.pnl_percent >= 0 ? "#22c55e" : "#ef4444"}
-                      fill={trader.pnl_percent >= 0 ? "#22c55e" : "#ef4444"}
-                      fillOpacity={0.2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <div className="w-full overflow-x-auto">
+                  <ResponsiveContainer width="100%" height={250} minHeight={250}>
+                    <AreaChart data={profitLossData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-30" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        className="text-xs"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        className="text-xs"
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [
+                          `$${value.toFixed(2)}`,
+                          "Cumulative P&L",
+                        ]}
+                        contentStyle={{ fontSize: '12px' }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="cumulativeProfit"
+                        stroke={trader.pnl_percent >= 0 ? "#22c55e" : "#ef4444"}
+                        fill={trader.pnl_percent >= 0 ? "#22c55e" : "#ef4444"}
+                        fillOpacity={0.2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
+                <div className="h-[250px] flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
                   No trade data available
                 </div>
               )}
@@ -261,36 +286,48 @@ export default function ProfilePage({
 
           {/* Portfolio Growth */}
           <Card className="bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white">Portfolio Growth</CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-white">
+                Portfolio Growth
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 Portfolio value over time
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               {portfolioGrowthData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={portfolioGrowthData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value: number) => [
-                        `$${value.toFixed(2)}`,
-                        "Portfolio Value",
-                      ]}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="portfolioValue"
-                      stroke="#3b82f6"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div className="w-full overflow-x-auto">
+                  <ResponsiveContainer width="100%" height={250} minHeight={250}>
+                    <LineChart data={portfolioGrowthData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-30" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        className="text-xs"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        className="text-xs"
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [
+                          `$${value.toFixed(2)}`,
+                          "Portfolio Value",
+                        ]}
+                        contentStyle={{ fontSize: '12px' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="portfolioValue"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
+                <div className="h-[250px] flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
                   No portfolio data available
                 </div>
               )}
@@ -300,44 +337,57 @@ export default function ProfilePage({
 
         {/* Latest Trades Table */}
         <Card className="bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-gray-900 dark:text-white">Latest Trades</CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+            <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-white">
+              Latest Trades
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
               Recent trading activity
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2 sm:px-6 pb-4 sm:pb-6">
             {latestTrades.length > 0 ? (
               <div className="overflow-x-auto -mx-2 sm:mx-0">
-                <div className="min-w-[560px] sm:min-w-0">
+                <div className="min-w-[500px] sm:min-w-0">
                   <Table>
                     <TableHeader>
                       <TableRow className="border-gray-200 dark:border-gray-700">
-                        <TableHead className="text-gray-700 dark:text-gray-300">Token</TableHead>
-                        <TableHead className="text-gray-700 dark:text-gray-300">Amount (USD)</TableHead>
-                        <TableHead className="text-gray-700 dark:text-gray-300">Profit/Loss</TableHead>
-                        <TableHead className="text-gray-700 dark:text-gray-300">Date</TableHead>
+                        <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 px-2 sm:px-4">
+                          Token
+                        </TableHead>
+                        <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 px-2 sm:px-4">
+                          Amount (USD)
+                        </TableHead>
+                        <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 px-2 sm:px-4">
+                          Profit/Loss
+                        </TableHead>
+                        <TableHead className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 px-2 sm:px-4">
+                          Date
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {latestTrades.map((trade) => (
-                        <TableRow key={trade.id} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 min-h-[44px]">
-                          <TableCell className="font-medium text-gray-900 dark:text-white">
+                        <TableRow 
+                          key={trade.id} 
+                          className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        >
+                          <TableCell className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white px-2 sm:px-4 py-2 sm:py-3">
                             {trade.token_symbol || "N/A"}
                           </TableCell>
-                          <TableCell className="text-gray-700 dark:text-gray-300">
+                          <TableCell className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 px-2 sm:px-4 py-2 sm:py-3">
                             ${trade.amount_usd.toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="px-2 sm:px-4 py-2 sm:py-3">
                             <span
-                              className={
+                              className={`text-xs sm:text-sm font-semibold ${
                                 trade.profit_loss_usd >= 0
-                                  ? "text-green-500 font-semibold"
-                                  : "text-red-500 font-semibold"
-                              }
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                              }`}
                             >
                               {trade.profit_loss_usd >= 0 ? "+" : ""}
                               ${trade.profit_loss_usd.toLocaleString(undefined, {
@@ -346,7 +396,7 @@ export default function ProfilePage({
                               })}
                             </span>
                           </TableCell>
-                          <TableCell className="text-gray-700 dark:text-gray-300">
+                          <TableCell className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
                             {new Date(trade.timestamp).toLocaleDateString("en-US", {
                               year: "numeric",
                               month: "short",
@@ -362,7 +412,7 @@ export default function ProfilePage({
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
                 No trades found
               </div>
             )}
