@@ -268,25 +268,68 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            aria-label="Toggle menu"
-            aria-expanded={mobileOpen}
-            onClick={(e) => {
-              e.stopPropagation();
-              setMobileOpen(!mobileOpen);
-            }}
-            className="md:hidden h-9 w-9 flex items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          {/* Mobile Right Side - Search Icon (Leaderboard only) + Hamburger Menu */}
+          <div className="md:hidden flex items-center gap-2">
+            {/* Mobile Search Icon - only on leaderboard */}
+            {isLeaderboardPage && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(!open);
+                }}
+                className="h-9 w-9 flex items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+                title="Search"
+              >
+                <Search className="h-5 w-5" />
+              </button>
+            )}
+            
+            {/* Mobile Menu Button */}
+            <button
+              aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMobileOpen(!mobileOpen);
+              }}
+              className="h-9 w-9 flex items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
       </nav>
+
+      {/* Mobile Search Input - appears below navbar when open on leaderboard */}
+      {isLeaderboardPage && open && (
+        <div className="md:hidden border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3">
+          <div className="container mx-auto">
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search @username or wallet..."
+              className="w-full h-11 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-4 text-sm border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="mt-2 h-9 w-full text-sm rounded-md border border-gray-200 dark:border-gray-700 text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Clear search
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Mobile Menu Overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 top-16 bg-black/50 backdrop-blur-sm z-40"
+          className={cn(
+            "md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40",
+            open && isLeaderboardPage ? "top-[9rem]" : "top-16"
+          )}
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -296,7 +339,10 @@ export function Navbar() {
         {mobileOpen && (
           <motion.div
             id="mobile-drawer"
-            className="md:hidden fixed inset-x-0 top-16 bottom-0 z-50 overflow-y-auto"
+            className={cn(
+              "md:hidden fixed inset-x-0 bottom-0 z-50 overflow-y-auto",
+              open && isLeaderboardPage ? "top-[9rem]" : "top-16"
+            )}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -327,25 +373,6 @@ export function Navbar() {
                   })}
                 </div>
 
-                {/* Search - only on leaderboard */}
-                {isLeaderboardPage && (
-                  <div className="mb-4">
-                    <input
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Search @username or wallet..."
-                      className="w-full h-11 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-4 text-sm border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
-                    />
-                    {query && (
-                      <button
-                        onClick={() => setQuery("")}
-                        className="mt-2 h-9 w-full text-sm rounded-md border border-gray-200 dark:border-gray-700 text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-                      >
-                        Clear search
-                      </button>
-                    )}
-                  </div>
-                )}
 
                 {/* Theme Toggle */}
                 <div className="mb-4">
