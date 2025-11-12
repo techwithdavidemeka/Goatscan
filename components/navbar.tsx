@@ -125,28 +125,35 @@ export function Navbar() {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Close mobile menu on outside click
+  // Prevent body scroll when mobile menu is open
   useEffect(() => {
-    if (!mobileOpen) return;
-    const handleClick = () => setMobileOpen(false);
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [mobileOpen]);
 
   return (
-    <nav className="border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center space-x-2">
-          <motion.span
-            className="text-2xl font-bold text-gray-900 dark:text-white"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            🐐 Goatscan
-          </motion.span>
-        </Link>
-        <div className="flex items-center space-x-1 sm:space-x-3 md:space-x-6">
-          <div className="hidden md:flex items-center space-x-3 md:space-x-6">
+    <>
+      <nav className="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/60">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
+            <motion.span
+              className="text-2xl font-bold text-white"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              🐐 Goatscan
+            </motion.span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-6 flex-1 justify-center">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -154,10 +161,10 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "text-sm font-medium transition-colors h-11 px-2 flex items-center rounded-md",
+                    "text-sm font-medium transition-colors px-3 py-2 rounded-md",
                     isActive 
-                      ? "text-gray-900 dark:text-white" 
-                      : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                      ? "text-white bg-gray-800" 
+                      : "text-gray-400 hover:text-white hover:bg-gray-800/50"
                   )}
                 >
                   {item.label}
@@ -165,73 +172,63 @@ export function Navbar() {
               );
             })}
           </div>
-          
-          <div className="md:hidden flex items-center">
-            <button
-              aria-label="Toggle menu"
-              aria-expanded={mobileOpen}
-              aria-controls="mobile-drawer"
-              onClick={(e) => {
-                e.stopPropagation();
-                setMobileOpen((v) => !v);
-              }}
-              className="h-11 w-11 flex items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
-              title="Menu"
-            >
-              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-          </div>
 
-          {/* Search trigger and input - only on leaderboard */}
-          {isLeaderboardPage && <div className="relative hidden md:block">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpen(!open);
-              }}
-              className="h-11 w-11 flex items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
-              title="Search"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-            {open && (
-              <div 
-                onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 z-50"
-              >
-                <input
-                  autoFocus
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search @username or wallet..."
-                  className="w-full h-11 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 text-sm border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
-                />
-                {query && (
-                  <button
-                    onClick={() => setQuery('')}
-                    className="mt-2 h-11 w-full text-sm rounded-md border border-gray-200 dark:border-gray-700 text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+          {/* Desktop Right Side */}
+          <div className="hidden md:flex items-center gap-3">
+            {/* Search - only on leaderboard */}
+            {isLeaderboardPage && (
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(!open);
+                  }}
+                  className="h-9 w-9 flex items-center justify-center rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                  title="Search"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+                {open && (
+                  <div 
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 top-full mt-2 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-3 z-50"
                   >
-                    Clear search
-                  </button>
+                    <input
+                      autoFocus
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search @username or wallet..."
+                      className="w-full h-9 rounded-md bg-gray-900 text-white placeholder-gray-500 px-3 text-sm border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {query && (
+                      <button
+                        onClick={() => setQuery('')}
+                        className="mt-2 h-9 w-full text-sm rounded-md border border-gray-700 text-gray-300 hover:bg-gray-800"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
-          </div>}
 
-          <button
-            onClick={toggleTheme}
-            className="hidden md:flex h-11 w-11 items-center justify-center rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
-          </button>
-          <div className="hidden md:flex items-center gap-2">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="h-9 w-9 flex items-center justify-center rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </button>
+
+            {/* User Account */}
             {loading ? (
-              <div className="h-9 w-24 animate-pulse rounded-md bg-gray-200 dark:bg-gray-800" />
+              <div className="h-9 w-24 animate-pulse rounded-md bg-gray-800" />
             ) : user ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -240,158 +237,179 @@ export function Navbar() {
                       ? `/profile/${userProfile.x_username}`
                       : "/signup"
                   }
-                  className="flex items-center gap-2 rounded-md px-3 text-sm font-medium text-gray-900 dark:text-white transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/80 min-h-[44px]"
+                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
                 >
                   <UserIcon className="h-4 w-4 flex-shrink-0" />
-                  <span className="hidden sm:inline-block truncate max-w-[120px]">
+                  <span className="truncate max-w-[120px]">
                     {displayName}
-                  </span>
-                  <span className="sm:hidden">
-                    {displayName?.startsWith("@") ? displayName.slice(0, 8) : "Profile"}
                   </span>
                 </Link>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="h-11 sm:h-8 px-2 sm:px-3 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="h-9 px-3 text-gray-400 hover:text-white hover:bg-gray-800"
                   title="Log out"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline-block ml-2">Log Out</span>
+                  <span className="hidden lg:inline-block ml-2">Log Out</span>
                 </Button>
               </div>
             ) : (
               <Link
                 href="/signup"
-                className="rounded-md bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700 min-h-[44px] flex items-center"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
               >
                 Sign Up
               </Link>
             )}
           </div>
-        </div>
-      </div>
 
+          {/* Mobile Menu Button */}
+          <button
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMobileOpen(!mobileOpen);
+            }}
+            className="md:hidden h-9 w-9 flex items-center justify-center rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 top-16 bg-gray-900/50 backdrop-blur-sm z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile Menu Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
             id="mobile-drawer"
-            className="md:hidden fixed inset-x-0 top-16 z-40"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, y: -8 }}
+            className="md:hidden fixed inset-x-0 top-16 bottom-0 z-50 overflow-y-auto"
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg origin-top overflow-hidden"
-              initial={{ scaleY: 0.98 }}
-              animate={{ scaleY: 1 }}
-              exit={{ scaleY: 0.98 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-            >
-              <div className="container mx-auto px-4 py-2">
-                <div className="divide-y divide-gray-200 dark:divide-gray-800">
-                  <div className="py-1">
-                    {navItems.map((item) => {
-                      const isActive = pathname === item.href;
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={cn(
-                            "block py-3 text-base font-medium",
-                            isActive
-                              ? "text-gray-900 dark:text-white"
-                              : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                          )}
-                        >
-                          {item.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                  {isLeaderboardPage && (
-                    <div className="py-3">
-                      <input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search @username or wallet..."
-                        className="w-full h-11 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-3 text-sm border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
-                      />
-                      {query && (
-                        <button
-                          onClick={() => setQuery("")}
-                          className="mt-2 h-11 w-full text-sm rounded-md border border-gray-200 dark:border-gray-700 text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
-                        >
-                          Clear search
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  <div className="py-2">
-                    <button
-                      onClick={() => {
-                        toggleTheme();
-                      }}
-                      className="w-full h-11 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700"
-                      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-                    >
-                      {theme === 'dark' ? (
-                        <div className="flex items-center gap-2"><Sun className="h-4 w-4" /><span>Light Mode</span></div>
-                      ) : (
-                        <div className="flex items-center gap-2"><Moon className="h-4 w-4" /><span>Dark Mode</span></div>
-                      )}
-                    </button>
-                  </div>
-                  <div className="py-2">
-                    {loading ? (
-                      <div className="h-9 w-full animate-pulse rounded-md bg-gray-200 dark:bg-gray-800" />
-                    ) : user ? (
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={
-                            userProfile?.x_username
-                              ? `/profile/${userProfile.x_username}`
-                              : "/signup"
-                          }
-                          onClick={() => setMobileOpen(false)}
-                          className="flex-1 h-11 flex items-center justify-center rounded-md border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
-                        >
-                          <UserIcon className="h-4 w-4 mr-2" />
-                          {displayName?.startsWith("@") ? displayName : "Profile"}
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setMobileOpen(false);
-                            handleLogout();
-                          }}
-                          className="h-11 px-3 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                        >
-                          <LogOut className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
+            <div className="bg-gray-900 border-t border-gray-800 shadow-xl">
+              <div className="container mx-auto px-4 py-4">
+                {/* Navigation Links */}
+                <div className="space-y-1 mb-4">
+                  {navItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
                       <Link
-                        href="/signup"
+                        key={item.href}
+                        href={item.href}
                         onClick={() => setMobileOpen(false)}
-                        className="w-full h-11 flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                        className={cn(
+                          "block px-4 py-3 text-base font-medium rounded-md transition-colors",
+                          isActive
+                            ? "text-white bg-gray-800"
+                            : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+                        )}
                       >
-                        Sign Up
+                        {item.label}
                       </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Search - only on leaderboard */}
+                {isLeaderboardPage && (
+                  <div className="mb-4">
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search @username or wallet..."
+                      className="w-full h-11 rounded-md bg-gray-800 text-white placeholder-gray-500 px-4 text-sm border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {query && (
+                      <button
+                        onClick={() => setQuery("")}
+                        className="mt-2 h-9 w-full text-sm rounded-md border border-gray-700 text-gray-300 hover:bg-gray-800"
+                      >
+                        Clear search
+                      </button>
                     )}
                   </div>
+                )}
+
+                {/* Theme Toggle */}
+                <div className="mb-4">
+                  <button
+                    onClick={toggleTheme}
+                    className="w-full h-11 flex items-center justify-center gap-2 rounded-md border border-gray-700 text-gray-300 hover:bg-gray-800"
+                  >
+                    {theme === 'dark' ? (
+                      <>
+                        <Sun className="h-4 w-4" />
+                        <span>Light Mode</span>
+                      </>
+                    ) : (
+                      <>
+                        <Moon className="h-4 w-4" />
+                        <span>Dark Mode</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* User Account */}
+                <div className="border-t border-gray-800 pt-4">
+                  {loading ? (
+                    <div className="h-11 w-full animate-pulse rounded-md bg-gray-800" />
+                  ) : user ? (
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={
+                          userProfile?.x_username
+                            ? `/profile/${userProfile.x_username}`
+                            : "/signup"
+                        }
+                        onClick={() => setMobileOpen(false)}
+                        className="flex-1 h-11 flex items-center justify-center gap-2 rounded-md border border-gray-700 text-white hover:bg-gray-800"
+                      >
+                        <UserIcon className="h-4 w-4" />
+                        <span>{displayName?.startsWith("@") ? displayName : "Profile"}</span>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setMobileOpen(false);
+                          handleLogout();
+                        }}
+                        className="h-11 px-3 text-gray-400 hover:text-white hover:bg-gray-800"
+                      >
+                        <LogOut className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/signup"
+                      onClick={() => setMobileOpen(false)}
+                      className="w-full h-11 flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      Sign Up
+                    </Link>
+                  )}
                 </div>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 }
 
