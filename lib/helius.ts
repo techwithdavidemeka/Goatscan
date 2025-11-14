@@ -150,19 +150,32 @@ export async function fetchWalletTransactions(
       "Missing Helius configuration. Set NEXT_PUBLIC_HELIUS_API_KEY (or HELIUS_API_KEY)."
     );
   }
-  // Helius v0 API - try without limit parameter first, or use different format
-  // Some Helius endpoints don't accept limit, so we'll fetch all and limit client-side if needed
-  const url = `${HELIUS_BASE}/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}`;
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      type: "SWAP",
-    }),
+  // Helius v0 API - parsed transactions endpoint
+  // The correct endpoint is /v0/addresses/{address}/transactions
+  // Try different API key formats as Helius API may vary
+  let url = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}&type=SWAP`;
+  let resp = await fetch(url, {
+    method: "GET",
     cache: "no-store",
   });
+  
+  // If that fails, try without type filter or with different format
+  if (!resp.ok) {
+    const errorText = await resp.text();
+    console.log(`Helius API error (first attempt): ${resp.status} ${errorText}`);
+    
+    // Try without type filter
+    url = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}`;
+    resp = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+    });
+    
+    // If still failing, the endpoint path might be wrong - log for debugging
+    if (!resp.ok) {
+      console.error(`Helius API error (second attempt): ${resp.status} ${await resp.text()}`);
+    }
+  }
   if (!resp.ok) {
     const text = await resp.text();
     throw new Error(`Helius error: ${resp.status} ${text}`);
