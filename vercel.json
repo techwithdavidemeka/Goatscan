@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/fetch-wallet-data",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/deactivate-inactive-users",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
