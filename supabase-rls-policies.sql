@@ -59,6 +59,12 @@ CREATE POLICY "Users can insert their own trades"
   ON trades FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- Policy 2b: Allow service role to insert trades (for server-side operations)
+-- This allows the API to insert trades on behalf of users
+CREATE POLICY "Service role can insert trades"
+  ON trades FOR INSERT
+  WITH CHECK (true);
+
 -- Policy 3: Allow authenticated users to update their own trades
 CREATE POLICY "Users can update their own trades"
   ON trades FOR UPDATE

@@ -31,13 +31,16 @@ function getSupabaseClient(): SupabaseClient {
 
 // Export a getter function for server-side usage in API routes
 // This creates the client on-demand, avoiding build-time errors
+// Uses service role key if available (bypasses RLS), otherwise falls back to anon key
 export function getSupabaseServerClient(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  // Prefer service role key for server-side operations (bypasses RLS)
+  // Fall back to anon key if service role is not available
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      'Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY'
+      'Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and either SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY'
     )
   }
 
