@@ -215,7 +215,16 @@ export async function parseTradesFromTransactions(
     // Log if we're using the new format
     if (!swap && isSwapType) {
       console.log(`Transaction ${tx.signature} is SWAP type but missing events.swap structure`);
+      // Skip transactions without swap event structure for now
+      // TODO: Parse from tokenTransfers/nativeTransfers if needed
+      continue;
     }
+    
+    // At this point, swap should exist, but TypeScript doesn't know that
+    if (!swap) {
+      continue;
+    }
+    
     // Only consider swaps initiated by the wallet
     if (swap.userAccount && swap.userAccount !== walletAddress) continue;
 
