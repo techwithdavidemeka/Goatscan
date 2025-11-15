@@ -199,136 +199,102 @@ export async function parseTradesFromTransactions(
   const solPriceUsd = await getSolPriceUsd();
 
   console.log(`Parsing ${transactions.length} transactions for wallet ${walletAddress}`);
-  if (transactions.length > 0) {
-    console.log(`Sample transaction structure:`, JSON.stringify(transactions[0], null, 2).substring(0, 500));
-  }
 
   for (const tx of transactions) {
-    // Check if transaction has swap event (old format) or is type SWAP (new format)
-    const swap = tx.events?.swap;
-    const isSwapType = tx.type === "SWAP";
-    
-    if (!swap && !isSwapType) {
+    // Check if transaction is type SWAP
+    if (tx.type !== "SWAP") {
       continue;
     }
-    
-    // Log if we're using the new format
-    if (!swap && isSwapType) {
-      console.log(`Transaction ${tx.signature} is SWAP type but missing events.swap structure`);
-      // Skip transactions without swap event structure for now
-      // TODO: Parse from tokenTransfers/nativeTransfers if needed
-      continue;
-    }
-    
-    // At this point, swap should exist, but TypeScript doesn't know that
-    if (!swap) {
-      continue;
-    }
-    
-    // Only consider swaps initiated by the wallet
-    if (swap.userAccount && swap.userAccount !== walletAddress) continue;
 
-    const source = normalizeSource(swap.programInfo?.source);
+    // Helius Enhanced Transactions API structure
+    // Use tokenTransfers and nativeTransfers instead of events.swap
+    const tokenTransfers = tx.tokenTransfers || [];
+    const nativeTransfers = tx.nativeTransfers || [];
+    
+    // Skip if no transfers
+    if (tokenTransfers.length === 0 && nativeTransfers.length === 0) {
+      continue;
+    }
+
+    const source = normalizeSource(tx.source || "unknown");
     const timestampIso = new Date(tx.timestamp * 1000).toISOString();
 
-    // Determine non-stable token mint and quote amount (SOL/USDC/USDT)
-    const tokenOut =
-      swap.tokenOutputs?.find((o) => !isExcludedMint(o.mint)) || null;
-    const tokenIn =
-      swap.tokenInputs?.find((i) => !isExcludedMint(i.mint)) || null;
-
-    const stableIn =
-      swap.tokenInputs?.find((i) => isExcludedMint(i.mint)) || null;
-    const stableOut =
-      swap.tokenOutputs?.find((o) => isExcludedMint(o.mint)) || null;
-
-    // Native SOL flows as input/output
-    const nativeInLamports = swap.nativeInput?.amount || 0;
-    const nativeOutLamports = swap.nativeOutput?.amount || 0;
-
-    // Buy scenario: spend SOL/USDC to receive token
-    if ((tokenOut && (stableIn || nativeInLamports > 0)) || (tokenOut && !tokenIn)) {
-      const mint = tokenOut.mint;
-      const qty = rawToAmount(tokenOut.rawTokenAmount);
-      let notionalUsd = 0;
-
-      if (stableIn) {
-        const amt = rawToAmount(stableIn.rawTokenAmount);
-        // USDC/USDT ~ USD
-        notionalUsd = amt;
-      } else if (nativeInLamports > 0) {
-        notionalUsd = lamportsToSol(nativeInLamports) * solPriceUsd;
-      }
-
+    // Parse tokenTransfers to find token movements
+    // Find tokens the wallet received (BUY) or sent (SELL)
+    for (const tokenTransfer of tokenTransfers) {
+      const isBuy = tokenTransfer.toUserAccount === walletAddress;
+      const isSell = tokenTransfer.fromUserAccount === walletAddress;
+      
+      if (!isBuy && !isSell) continue;
+      
+      const mint = tokenTransfer.mint;
+      const qty = tokenTransfer.tokenAmount || 0;
+      
+      // Skip stablecoins (USDC, USDT, etc.)
+      if (isExcludedMint(mint)) continue;
+      
       const symbol = await getTokenSymbol(mint);
-
-      // Record inventory for cost basis
-      if (!inventory[mint]) inventory[mint] = [];
-      const unitCost = qty > 0 ? notionalUsd / qty : 0;
-      inventory[mint].push({ qty, costUsdPerToken: unitCost });
-
-      trades.push({
-        signature: tx.signature,
-        tokenAddress: mint,
-        tokenSymbol: symbol,
-        side: "buy",
-        quantity: qty,
-        amountUsd: notionalUsd,
-        profitLossUsd: 0,
-        timestamp: timestampIso,
-        source,
-      });
-      continue;
-    }
-
-    // Sell scenario: receive SOL/USDC by giving token
-    if ((tokenIn && (stableOut || nativeOutLamports > 0)) || (tokenIn && !tokenOut)) {
-      const mint = tokenIn.mint;
-      const qtyToSell = rawToAmount(tokenIn.rawTokenAmount);
-      let proceedsUsd = 0;
-
-      if (stableOut) {
-        const amt = rawToAmount(stableOut.rawTokenAmount);
-        proceedsUsd = amt;
-      } else if (nativeOutLamports > 0) {
-        proceedsUsd = lamportsToSol(nativeOutLamports) * solPriceUsd;
-      }
-
-      const symbol = await getTokenSymbol(mint);
-
-      // Compute cost basis from inventory FIFO
-      let remaining = qtyToSell;
-      let costUsd = 0;
-      const lots = inventory[mint] || [];
-      while (remaining > 0 && lots.length > 0) {
-        const lot = lots[0];
-        const take = Math.min(remaining, lot.qty);
-        costUsd += take * lot.costUsdPerToken;
-        lot.qty -= take;
-        remaining -= take;
-        if (lot.qty <= 1e-9) {
-          lots.shift();
+      
+      // Calculate USD value from native transfers (SOL spent/received)
+      let amountUsd = 0;
+      for (const nativeTransfer of nativeTransfers) {
+        if (isBuy && nativeTransfer.fromUserAccount === walletAddress) {
+          // Buying: wallet sent SOL
+          amountUsd = lamportsToSol(nativeTransfer.amount) * solPriceUsd;
+        } else if (isSell && nativeTransfer.toUserAccount === walletAddress) {
+          // Selling: wallet received SOL
+          amountUsd = lamportsToSol(nativeTransfer.amount) * solPriceUsd;
         }
       }
-      // If selling more than current inventory, treat excess cost as zero (edge case)
-      if (remaining > 0) {
-        // no-op for cost
+      
+      if (isBuy) {
+        // BUY: Record inventory for cost basis
+        if (!inventory[mint]) inventory[mint] = [];
+        const unitCost = qty > 0 ? amountUsd / qty : 0;
+        inventory[mint].push({ qty, costUsdPerToken: unitCost });
+        
+        trades.push({
+          signature: tx.signature,
+          tokenAddress: mint,
+          tokenSymbol: symbol,
+          side: "buy",
+          quantity: qty,
+          amountUsd: amountUsd,
+          profitLossUsd: 0,
+          timestamp: timestampIso,
+          source,
+        });
+      } else if (isSell) {
+        // SELL: Compute cost basis from inventory FIFO
+        let remaining = qty;
+        let costUsd = 0;
+        const lots = inventory[mint] || [];
+        while (remaining > 0 && lots.length > 0) {
+          const lot = lots[0];
+          const take = Math.min(remaining, lot.qty);
+          costUsd += take * lot.costUsdPerToken;
+          lot.qty -= take;
+          remaining -= take;
+          if (lot.qty <= 1e-9) {
+            lots.shift();
+          }
+        }
+        inventory[mint] = lots;
+        
+        const pnlUsd = amountUsd - costUsd;
+        
+        trades.push({
+          signature: tx.signature,
+          tokenAddress: mint,
+          tokenSymbol: symbol,
+          side: "sell",
+          quantity: qty,
+          amountUsd: amountUsd,
+          profitLossUsd: pnlUsd,
+          timestamp: timestampIso,
+          source,
+        });
       }
-      inventory[mint] = lots;
-
-      const pnlUsd = proceedsUsd - costUsd;
-
-      trades.push({
-        signature: tx.signature,
-        tokenAddress: mint,
-        tokenSymbol: symbol,
-        side: "sell",
-        quantity: qtyToSell,
-        amountUsd: proceedsUsd,
-        profitLossUsd: pnlUsd,
-        timestamp: timestampIso,
-        source,
-      });
     }
   }
 
