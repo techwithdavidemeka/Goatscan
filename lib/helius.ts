@@ -151,73 +151,13 @@ export async function fetchWalletTransactions(
     );
   }
   // Helius v0 API - Enhanced Transactions API
-  // Based on Helius docs: https://docs.helius.dev/compression-and-downloads/parsed-transaction-webhooks
-  // The correct endpoint format is: GET /v0/addresses/{address}/transactions
-  // API key can be in query param or header
+  // Verified working format: GET /v0/addresses/{address}/transactions?api-key={key}&type=SWAP
+  const url = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}&type=SWAP`;
   
-  const baseUrl = `https://api.helius.xyz/v0`;
-  let url: string;
-  let resp: Response;
-  
-  // Try format 1: API key in query parameter (most common)
-  url = `${baseUrl}/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}`;
-  resp = await fetch(url, {
+  const resp = await fetch(url, {
     method: "GET",
-    headers: {
-      "Accept": "application/json",
-    },
     cache: "no-store",
   });
-  
-  // Try format 2: API key in header if query param fails
-  if (!resp.ok) {
-    const errorText = await resp.text();
-    console.log(`Helius API attempt 1 (query param) failed: ${resp.status} ${errorText}`);
-    
-    url = `${baseUrl}/addresses/${walletAddress}/transactions`;
-    resp = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json",
-        "X-API-Key": HELIUS_API_KEY,
-      },
-      cache: "no-store",
-    });
-  }
-  
-  // Try format 3: With type filter in query
-  if (!resp.ok) {
-    const errorText = await resp.text();
-    console.log(`Helius API attempt 2 (header) failed: ${resp.status} ${errorText}`);
-    
-    url = `${baseUrl}/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}&type=SWAP`;
-    resp = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json",
-      },
-      cache: "no-store",
-    });
-  }
-  
-  // Try format 4: POST request with filters in body
-  if (!resp.ok) {
-    const errorText = await resp.text();
-    console.log(`Helius API attempt 3 (type filter) failed: ${resp.status} ${errorText}`);
-    
-    url = `${baseUrl}/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}`;
-    resp = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: JSON.stringify({
-        type: "SWAP",
-      }),
-      cache: "no-store",
-    });
-  }
   
   if (!resp.ok) {
     const text = await resp.text();
@@ -226,14 +166,9 @@ export async function fetchWalletTransactions(
   
   const data = (await resp.json()) as HeliusParsedTransaction[];
   
-  // Filter for SWAP transactions (Helius returns all types, we filter client-side)
-  const swapTransactions = data.filter((tx) => {
-    // Check if transaction has swap event or if type is SWAP
-    return tx.events?.swap !== null && tx.events?.swap !== undefined;
-  });
-  
+  // Helius already filters by type=SWAP, but we ensure we only return swap transactions
   // Limit results client-side
-  return swapTransactions.slice(0, limit);
+  return data.slice(0, limit);
 }
 
 export async function parseTradesFromTransactions(
