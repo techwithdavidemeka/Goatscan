@@ -20,6 +20,8 @@ const JUPITER_PRICE_ENDPOINT = "https://price.jup.ag/v6/price?ids=SOL";
 export type HeliusParsedTransaction = {
   signature: string;
   timestamp: number;
+  type?: string; // Transaction type from Helius (e.g., "SWAP")
+  source?: string; // Source from Helius (e.g., "PUMP_FUN")
   events?: {
     swap?: {
       programInfo?: { source?: string | null };
@@ -30,6 +32,19 @@ export type HeliusParsedTransaction = {
       userAccount?: string;
     } | null;
   };
+  // Direct fields from Helius Enhanced Transactions API
+  nativeTransfers?: Array<{
+    fromUserAccount?: string;
+    toUserAccount?: string;
+    amount: number;
+  }>;
+  tokenTransfers?: Array<{
+    fromUserAccount?: string;
+    toUserAccount?: string;
+    mint: string;
+    tokenAmount: number;
+    decimals: number;
+  }>;
 };
 
 export type TradeSide = "buy" | "sell";
@@ -183,9 +198,24 @@ export async function parseTradesFromTransactions(
   const trades: ParsedTrade[] = [];
   const solPriceUsd = await getSolPriceUsd();
 
+  console.log(`Parsing ${transactions.length} transactions for wallet ${walletAddress}`);
+  if (transactions.length > 0) {
+    console.log(`Sample transaction structure:`, JSON.stringify(transactions[0], null, 2).substring(0, 500));
+  }
+
   for (const tx of transactions) {
+    // Check if transaction has swap event (old format) or is type SWAP (new format)
     const swap = tx.events?.swap;
-    if (!swap) continue;
+    const isSwapType = tx.type === "SWAP";
+    
+    if (!swap && !isSwapType) {
+      continue;
+    }
+    
+    // Log if we're using the new format
+    if (!swap && isSwapType) {
+      console.log(`Transaction ${tx.signature} is SWAP type but missing events.swap structure`);
+    }
     // Only consider swaps initiated by the wallet
     if (swap.userAccount && swap.userAccount !== walletAddress) continue;
 

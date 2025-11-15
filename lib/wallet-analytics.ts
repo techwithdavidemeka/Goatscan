@@ -18,9 +18,15 @@ export async function calculateWalletMetrics(
   try {
     // Fetch transactions from Helius (covers Pump.fun and DEX swaps via events.source)
     const transactions = await fetchWalletTransactions(walletAddress);
+    console.log(`Fetched ${transactions.length} transactions from Helius for ${walletAddress}`);
+    
+    if (transactions.length > 0) {
+      console.log(`First transaction sample:`, JSON.stringify(transactions[0], null, 2).substring(0, 1000));
+    }
     
     // Parse trades from transactions
     const parsedTrades = await parseTradesFromTransactions(transactions, walletAddress);
+    console.log(`Parsed ${parsedTrades.length} trades from ${transactions.length} transactions`);
 
     // Log inclusion by source (Pump.fun vs DEX)
     const pumpTrades = parsedTrades.filter((t) => t.source === "pumpfun");
