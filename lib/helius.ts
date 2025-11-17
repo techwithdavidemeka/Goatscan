@@ -122,6 +122,24 @@ async function getTokenSymbol(mint: string): Promise<string> {
   if (cached && Date.now() - cached.fetchedAt < 5 * 60_000) {
     return cached.symbol;
   }
+  
+  // Try pump.fun API first (for pump.fun tokens)
+  try {
+    const pumpFunUrl = `https://frontend-api.pump.fun/coins/${mint}`;
+    const pumpResp = await fetch(pumpFunUrl, { cache: "force-cache" });
+    if (pumpResp.ok) {
+      const pumpJson = await pumpResp.json();
+      const symbol = pumpJson?.symbol || pumpJson?.name || null;
+      if (symbol) {
+        tokenMetaCache.set(mint, { symbol, fetchedAt: Date.now() });
+        return symbol;
+      }
+    }
+  } catch {
+    // Continue to fallback
+  }
+  
+  // Fallback to DexScreener
   try {
     const url = `${DEXSCREENER_TOKEN_ENDPOINT}/${mint}`;
     const resp = await fetch(url, { cache: "force-cache" });
