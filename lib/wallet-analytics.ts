@@ -34,17 +34,24 @@ export async function calculateWalletMetrics(
     console.log(`Parsed trades for ${walletAddress}: total=${parsedTrades.length}, pumpfun=${pumpTrades.length}, dex=${dexTrades.length}`);
     
     // Get existing trades from database to avoid duplicates
-    // Prefer signature-based deduplication; fallback to timestamp+token_address
-    const { data: existingTrades } = await supabase
+    // Signatures are globally unique (transaction signatures), so check across all users
+    // Also check user-specific trades for timestamp+token_address fallback
+    const { data: existingTradesByUser } = await supabase
       .from("trades")
       .select("timestamp, token_address, signature")
       .eq("user_id", userId);
     
+    // Get all signatures globally (since signature is a unique constraint)
+    const { data: allExistingTrades } = await supabase
+      .from("trades")
+      .select("signature")
+      .not("signature", "is", null);
+    
     const existingSignatures = new Set(
-      existingTrades?.map((t: any) => t.signature).filter(Boolean) || []
+      allExistingTrades?.map((t: any) => t.signature).filter(Boolean) || []
     );
     const existingTimeAddrKeys = new Set(
-      existingTrades?.map((t: any) => `${t.timestamp}_${t.token_address}`) || []
+      existingTradesByUser?.map((t: any) => `${t.timestamp}_${t.token_address}`) || []
     );
     
     // Filter out existing trades and insert new ones
@@ -54,7 +61,7 @@ export async function calculateWalletMetrics(
       return !existingTimeAddrKeys.has(tradeKey);
     });
 
-    console.log(`Deduplication for ${walletAddress}: newTrades=${newTrades.length}, existing=${(existingTrades?.length)||0}`);
+    console.log(`Deduplication for ${walletAddress}: newTrades=${newTrades.length}, existing=${(existingTradesByUser?.length)||0}, globalSignatures=${existingSignatures.size}`);
     
     if (newTrades.length > 0) {
       // Insert new trades - prefer including source/side/quantity if columns exist

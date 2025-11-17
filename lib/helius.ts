@@ -138,8 +138,11 @@ async function getTokenSymbol(mint: string): Promise<string> {
       const symbol = pumpJson?.symbol || pumpJson?.name || null;
       if (symbol) {
         tokenMetaCache.set(mint, { symbol, fetchedAt: Date.now() });
+        console.log(`Pump.fun API success for ${mint}: ${symbol}`);
         return symbol;
       }
+    } else {
+      console.log(`Pump.fun API returned ${pumpResp.status} for ${mint}, using fallback`);
     }
   } catch (error) {
     // Continue to fallback - pump.fun API might be rate-limited or require auth
