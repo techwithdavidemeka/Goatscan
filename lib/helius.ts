@@ -126,7 +126,13 @@ async function getTokenSymbol(mint: string): Promise<string> {
   // Try pump.fun API first (for pump.fun tokens)
   try {
     const pumpFunUrl = `https://frontend-api.pump.fun/coins/${mint}`;
-    const pumpResp = await fetch(pumpFunUrl, { cache: "force-cache" });
+    const pumpResp = await fetch(pumpFunUrl, {
+      cache: "force-cache",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://pump.fun/",
+      },
+    });
     if (pumpResp.ok) {
       const pumpJson = await pumpResp.json();
       const symbol = pumpJson?.symbol || pumpJson?.name || null;
@@ -135,8 +141,9 @@ async function getTokenSymbol(mint: string): Promise<string> {
         return symbol;
       }
     }
-  } catch {
-    // Continue to fallback
+  } catch (error) {
+    // Continue to fallback - pump.fun API might be rate-limited or require auth
+    console.log(`Pump.fun API failed for ${mint}, using fallback:`, error);
   }
   
   // Fallback to DexScreener
