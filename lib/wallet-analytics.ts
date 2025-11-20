@@ -1,4 +1,4 @@
-import { fetchWalletTransactions, parseTradesFromTransactions, ParsedTrade } from "./helius";
+import { parseTradesFromTransactions, ParsedTrade } from "./helius";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Trade } from "@/lib/types";
 
@@ -16,17 +16,9 @@ export async function calculateWalletMetrics(
   supabase: SupabaseClient
 ): Promise<WalletMetrics> {
   try {
-    // Fetch transactions from Helius (covers Pump.fun and DEX swaps via events.source)
-    const transactions = await fetchWalletTransactions(walletAddress);
-    console.log(`Fetched ${transactions.length} transactions from Helius for ${walletAddress}`);
-    
-    if (transactions.length > 0) {
-      console.log(`First transaction sample:`, JSON.stringify(transactions[0], null, 2).substring(0, 1000));
-    }
-    
-    // Parse trades from transactions (pass supabase for price caching)
-    const parsedTrades = await parseTradesFromTransactions(transactions, walletAddress, supabase);
-    console.log(`Parsed ${parsedTrades.length} trades from ${transactions.length} transactions`);
+    console.log(`Fetching swaps from Moralis for wallet ${walletAddress}`);
+    const parsedTrades = await parseTradesFromTransactions([], walletAddress, supabase);
+    console.log(`Parsed ${parsedTrades.length} trades from Moralis swaps`);
 
     // Log inclusion by source (Pump.fun vs DEX)
     const pumpTrades = parsedTrades.filter((t) => t.source === "pumpfun");

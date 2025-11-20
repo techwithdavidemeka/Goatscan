@@ -296,20 +296,3 @@ export async function parseTradesFromTransactions(
 
   return trades.filter((t) => !isExcludedMint(t.tokenAddress));
 }
-
-
-// Helper function to get token price (placeholder - integrate with price API)
-export async function getTokenPriceUsd(
-  tokenAddress: string,
-  timestamp?: number
-): Promise<number> {
-  // In production, integrate with:
-  // - CoinGecko API
-  // - Birdeye API
-  // - Jupiter Price API
-  // - Helius Token Metadata API
-  
-  // For now, return a placeholder
-  return 0;
-}
-
