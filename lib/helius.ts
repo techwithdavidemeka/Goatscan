@@ -134,7 +134,7 @@ function resolveSwapSignature(swap: MoralisSwap): string | null {
   return swap.signature || swap.transactionSignature || null;
 }
 
-function resolveTimestampSeconds(swap: MoralisSwap): number {
+function resolveSwapTimestamp(swap: MoralisSwap): number {
   return (
     swap.blockTimestamp ||
     swap.blockTime ||
