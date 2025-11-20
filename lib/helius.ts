@@ -187,7 +187,7 @@ export async function parseTradesFromTransactions(
   > = {};
   const trades: ParsedTrade[] = [];
 
-  const swaps = await getWalletSwaps(walletAddress, { limit: 500 });
+  const swaps = await getWalletSwaps(walletAddress, { limit: 100 });
   console.log(
     `Parsing ${swaps.length} swaps from Moralis for wallet ${walletAddress}`
   );
