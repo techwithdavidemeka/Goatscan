@@ -552,9 +552,6 @@ export default function ProfilePage({
             </CardContent>
           </Card>
         </div>
-
-        {/* Latest Trades Table */}
-        {/* Legacy table removed */}
         </motion.div>
       </div>
     </div>
