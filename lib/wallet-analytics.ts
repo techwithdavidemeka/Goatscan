@@ -15,6 +15,19 @@ export async function calculateWalletMetrics(
   userId: string,
   supabase: SupabaseClient
 ): Promise<WalletMetrics> {
+  // Helper function to safely convert timestamp to ISO string
+  const safeTimestampToISO = (timestamp: number): string => {
+    if (!timestamp || typeof timestamp !== 'number' || timestamp <= 0) {
+      return new Date().toISOString();
+    }
+    try {
+      const date = new Date(timestamp * 1000);
+      return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+    } catch {
+      return new Date().toISOString();
+    }
+  };
+
   try {
     console.log(`Calculating wallet metrics using Moralis Wallet API for ${walletAddress}`);
     
@@ -39,11 +52,11 @@ export async function calculateWalletMetrics(
     const existingTimeAddrKeys = new Set(
       existingTradesByUser?.map((t: any) => `${t.timestamp}_${t.token_address}`) || []
     );
-    
+
     // Convert ProfileTrade to database format and filter duplicates
     const newTrades = analytics.trades.filter((trade) => {
       if (trade.signature && existingSignatures.has(trade.signature)) return false;
-      const tradeKey = `${new Date(trade.timestamp * 1000).toISOString()}_${trade.tokenAddress}`;
+      const tradeKey = `${safeTimestampToISO(trade.timestamp)}_${trade.tokenAddress}`;
       return !existingTimeAddrKeys.has(tradeKey);
     });
 
@@ -68,7 +81,7 @@ export async function calculateWalletMetrics(
               price_sol: priceData.priceSol,
               price_source: "moralis",
               is_bonded: priceData.isBonded,
-              timestamp: new Date(trade.timestamp * 1000).toISOString(),
+              timestamp: safeTimestampToISO(trade.timestamp),
               side: trade.side,
               quantity: trade.quantity,
               signature: trade.signature,
@@ -87,7 +100,7 @@ export async function calculateWalletMetrics(
               price_sol: 0,
               price_source: "moralis",
               is_bonded: false,
-              timestamp: new Date(trade.timestamp * 1000).toISOString(),
+              timestamp: safeTimestampToISO(trade.timestamp),
               side: trade.side,
               quantity: trade.quantity,
               signature: trade.signature,
@@ -108,7 +121,7 @@ export async function calculateWalletMetrics(
           amount_sol: trade.amountSol,
           profit_loss_usd: trade.profitLossUsd,
           profit_loss_sol: 0,
-          timestamp: new Date(trade.timestamp * 1000).toISOString(),
+          timestamp: safeTimestampToISO(trade.timestamp),
         }));
         const retry = await supabase.from("trades").insert(tradesMinimal);
         if (retry.error) {
@@ -127,10 +140,18 @@ export async function calculateWalletMetrics(
       ? (totalProfitUsd / stats.totalVolumeUsd) * 100 
       : 0;
     
-    // Get last trade timestamp
-    const lastTradeTimestamp = stats.lastTradeTimestamp
-      ? new Date(stats.lastTradeTimestamp * 1000).toISOString()
-      : null;
+    // Get last trade timestamp - validate it's a valid number and positive
+    let lastTradeTimestamp: string | null = null;
+    if (stats.lastTradeTimestamp && typeof stats.lastTradeTimestamp === 'number' && stats.lastTradeTimestamp > 0) {
+      try {
+        const date = new Date(stats.lastTradeTimestamp * 1000);
+        if (!isNaN(date.getTime())) {
+          lastTradeTimestamp = date.toISOString();
+        }
+      } catch (error) {
+        console.warn(`Invalid timestamp for ${walletAddress}: ${stats.lastTradeTimestamp}`, error);
+      }
+    }
     
     console.log(
       `Metrics for ${walletAddress}: ${stats.totalTrades} trades, ` +
