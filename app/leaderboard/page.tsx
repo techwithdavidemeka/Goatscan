@@ -11,8 +11,7 @@ import { useSearch } from "@/lib/ui/search-context";
 
 type TimeFilter = "daily" | "weekly" | "monthly";
 
-// Approximate SOL price (you might want to fetch this dynamically)
-const SOL_PRICE_USD = 166;
+// SOL price will be fetched dynamically
 
 // Avatar component with fade-in animation
 function Avatar({ username, className }: { username: string; className?: string }) {
@@ -70,6 +69,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("daily");
   const [tradeCounts, setTradeCounts] = useState<Record<string, { wins: number; total: number }>>({});
+  const [solPriceUsd, setSolPriceUsd] = useState<number>(166); // Default fallback
   const { query } = useSearch();
 
   useEffect(() => {
@@ -91,6 +91,27 @@ export default function LeaderboardPage() {
     }
 
     fetchData();
+  }, []);
+
+  // Fetch SOL price
+  useEffect(() => {
+    async function fetchSolPrice() {
+      try {
+        const res = await fetch("/api/sol-price");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.priceUsd) {
+            setSolPriceUsd(data.priceUsd);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch SOL price", error);
+      }
+    }
+    fetchSolPrice();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchSolPrice, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Filter by time period and sort - this creates the base ranked list
@@ -139,7 +160,7 @@ export default function LeaderboardPage() {
 
   // Helper function to convert USD to SOL
   const usdToSol = (usd: number) => {
-    return usd / SOL_PRICE_USD;
+    return usd / solPriceUsd;
   };
 
   // Helper function to format numbers
@@ -302,7 +323,7 @@ export default function LeaderboardPage() {
                             {formatNumber(profitSol)} Sol
                           </div>
                           <div className="text-xs sm:text-xs text-gray-500 dark:text-gray-400 font-normal whitespace-nowrap">
-                            ${formatNumber(Math.abs(trader.total_profit_usd), 1)}
+                            {isProfit ? "+" : ""}${formatNumber(trader.total_profit_usd, 1)}
                           </div>
                         </div>
                       </div>
