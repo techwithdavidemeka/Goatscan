@@ -5,16 +5,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   TrendingUp,
-  TrendingDown,
   DollarSign,
   Activity,
   Target,
@@ -34,7 +25,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { getUserByUsername, getUserTrades, getTradeStats } from "@/lib/supabase/queries";
+import { getUserByUsername } from "@/lib/supabase/queries";
 import { prepareProfitLossData, preparePortfolioGrowthData } from "@/lib/chart-data";
 import { User, Trade } from "@/lib/types";
 import type { ProfileAnalytics } from "@/lib/types/profileAnalytics";
@@ -48,14 +39,6 @@ export default function ProfilePage({
   const { username } = params;
   const router = useRouter();
   const [trader, setTrader] = useState<User | null>(null);
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [stats, setStats] = useState({
-    winRate: 0,
-    bestTrade: 0,
-    worstTrade: 0,
-    avgTradeSize: 0,
-    totalVolume: 0,
-  });
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<ProfileAnalytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
@@ -71,10 +54,6 @@ export default function ProfilePage({
       }
 
       setTrader(user);
-      const userTrades = await getUserTrades(user.id);
-      setTrades(userTrades);
-      const tradeStats = await getTradeStats(userTrades);
-      setStats(tradeStats);
       setLoading(false);
     }
 
@@ -110,14 +89,26 @@ export default function ProfilePage({
     };
   }, [trader?.wallet_address]);
 
-  // Prepare chart data
+  const analyticsTradesForCharts = useMemo<Trade[]>(() => {
+    if (!analytics) return [];
+    return analytics.trades.map((trade, index) => ({
+      id: trade.signature || `analytics-${index}`,
+      user_id: trader?.id ?? "analytics",
+      token_symbol: trade.tokenSymbol,
+      token_address: trade.tokenAddress,
+      amount_usd: trade.amountUsd,
+      profit_loss_usd: trade.profitLossUsd,
+      timestamp: new Date(trade.timestamp * 1000).toISOString(),
+    }));
+  }, [analytics, trader?.id]);
+
   const profitLossData = useMemo(
-    () => prepareProfitLossData(trades),
-    [trades]
+    () => prepareProfitLossData(analyticsTradesForCharts),
+    [analyticsTradesForCharts]
   );
   const portfolioGrowthData = useMemo(
-    () => preparePortfolioGrowthData(trades),
-    [trades]
+    () => preparePortfolioGrowthData(analyticsTradesForCharts),
+    [analyticsTradesForCharts]
   );
 
   // Check if trader is active (last trade within 7 days)
@@ -137,37 +128,70 @@ export default function ProfilePage({
     );
   }
 
-  const statCards = [
-    {
-      label: "Total PnL",
-      value: `${trader.pnl_percent > 0 ? "+" : ""}${trader.pnl_percent.toFixed(2)}%`,
-      icon: TrendingUp,
-      color: trader.pnl_percent >= 0 ? "text-green-600" : "text-red-600",
-    },
-    {
-      label: "Total Trades",
-      value: trader.total_trades.toString(),
-      icon: Activity,
-      color: "text-blue-600",
-    },
-    {
-      label: "Win Rate",
-      value: `${stats.winRate.toFixed(1)}%`,
-      icon: Target,
-      color: "text-purple-600",
-    },
-    {
-      label: "Total Profit",
-      value: `$${trader.total_profit_usd.toLocaleString(undefined, {
-        maximumFractionDigits: 2,
-      })}`,
-      icon: DollarSign,
-      color: "text-orange-600",
-    },
-  ];
-
-  // Latest trades for table (limit to 10)
-  const latestTrades = trades.slice(0, 10);
+  const statCards = useMemo(() => {
+    if (analytics) {
+      const pnlPercent =
+        analytics.stats.totalVolumeUsd > 0
+          ? (analytics.stats.realizedProfitUsd / analytics.stats.totalVolumeUsd) * 100
+          : 0;
+      return [
+        {
+          label: "Total PnL",
+          value: `${pnlPercent > 0 ? "+" : ""}${pnlPercent.toFixed(2)}%`,
+          icon: TrendingUp,
+          color: pnlPercent >= 0 ? "text-green-600" : "text-red-600",
+        },
+        {
+          label: "Total Trades",
+          value: analytics.trades.length.toString(),
+          icon: Activity,
+          color: "text-blue-600",
+        },
+        {
+          label: "Win Rate",
+          value: `${analytics.stats.winRate.toFixed(1)}%`,
+          icon: Target,
+          color: "text-purple-600",
+        },
+        {
+          label: "Total Profit",
+          value: formatCurrency(
+            analytics.stats.realizedProfitUsd + analytics.stats.unrealizedProfitUsd
+          ),
+          icon: DollarSign,
+          color: "text-orange-600",
+        },
+      ];
+    }
+    return [
+      {
+        label: "Total PnL",
+        value: `${trader.pnl_percent > 0 ? "+" : ""}${trader.pnl_percent.toFixed(2)}%`,
+        icon: TrendingUp,
+        color: trader.pnl_percent >= 0 ? "text-green-600" : "text-red-600",
+      },
+      {
+        label: "Total Trades",
+        value: trader.total_trades.toString(),
+        icon: Activity,
+        color: "text-blue-600",
+      },
+      {
+        label: "Win Rate",
+        value: `—`,
+        icon: Target,
+        color: "text-purple-600",
+      },
+      {
+        label: "Total Profit",
+        value: `$${trader.total_profit_usd.toLocaleString(undefined, {
+          maximumFractionDigits: 2,
+        })}`,
+        icon: DollarSign,
+        color: "text-orange-600",
+      },
+    ];
+  }, [analytics, trader]);
 
   const formatCurrency = (value: number, opts: Intl.NumberFormatOptions = {}) =>
     `$${value.toLocaleString(undefined, {

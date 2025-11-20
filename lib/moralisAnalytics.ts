@@ -61,7 +61,7 @@ function getPrimaryTokenMint(tokenInMint: string, tokenOutMint: string) {
 }
 
 export async function getProfileAnalytics(walletAddress: string): Promise<ProfileAnalytics> {
-  const swaps = await getWalletSwaps(walletAddress, { limit: 250 });
+  const swaps = await getWalletSwaps(walletAddress, { limit: 100 });
   const sorted = [...swaps].sort(
     (a, b) => resolveSwapTimestamp(a) - resolveSwapTimestamp(b)
   );
