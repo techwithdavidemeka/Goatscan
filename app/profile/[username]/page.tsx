@@ -120,6 +120,47 @@ export default function ProfilePage({
     return lastTradeDate >= sevenDaysAgo;
   }, [trader]);
 
+  function formatCurrency(value: number, opts: Intl.NumberFormatOptions = {}) {
+    return `$${value.toLocaleString(undefined, {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+      ...opts,
+    })}`;
+  }
+
+  function formatNumberCompact(value: number) {
+    return new Intl.NumberFormat("en-US", {
+      notation: "compact",
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+
+  function formatDuration(seconds: number) {
+    if (!seconds || seconds <= 0) return "—";
+    const minutes = seconds / 60;
+    if (minutes < 1) return `${Math.round(seconds)}s`;
+    if (minutes < 60) return `${minutes.toFixed(0)}m`;
+    const hours = minutes / 60;
+    if (hours < 24) return `${hours.toFixed(1)}h`;
+    const days = hours / 24;
+    return `${days.toFixed(1)}d`;
+  }
+
+  function getRelativeTime(timestamp: number) {
+    const diffMs = Date.now() - timestamp * 1000;
+    const minutes = Math.floor(diffMs / (1000 * 60));
+    if (minutes < 60) return `${Math.max(minutes, 1)}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+  }
+
+  function truncateWallet(address: string) {
+    if (address.length <= 12) return address;
+    return `${address.slice(0, 6)}...${address.slice(-6)}`;
+  }
+
   const statCards = useMemo(() => {
     if (!trader) {
       return [];
@@ -196,44 +237,6 @@ export default function ProfilePage({
     );
   }
 
-  const formatCurrency = (value: number, opts: Intl.NumberFormatOptions = {}) =>
-    `$${value.toLocaleString(undefined, {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 2,
-      ...opts,
-    })}`;
-
-  const formatNumberCompact = (value: number) =>
-    new Intl.NumberFormat("en-US", {
-      notation: "compact",
-      maximumFractionDigits: 2,
-    }).format(value);
-
-  const formatDuration = (seconds: number) => {
-    if (!seconds || seconds <= 0) return "—";
-    const minutes = seconds / 60;
-    if (minutes < 1) return `${Math.round(seconds)}s`;
-    if (minutes < 60) return `${minutes.toFixed(0)}m`;
-    const hours = minutes / 60;
-    if (hours < 24) return `${hours.toFixed(1)}h`;
-    const days = hours / 24;
-    return `${days.toFixed(1)}d`;
-  };
-
-  const getRelativeTime = (timestamp: number) => {
-    const diffMs = Date.now() - timestamp * 1000;
-    const minutes = Math.floor(diffMs / (1000 * 60));
-    if (minutes < 60) return `${Math.max(minutes, 1)}m`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h`;
-    const days = Math.floor(hours / 24);
-    return `${days}d`;
-  };
-
-  const truncateWallet = (address: string) => {
-    if (address.length <= 12) return address;
-    return `${address.slice(0, 6)}...${address.slice(-6)}`;
-  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
