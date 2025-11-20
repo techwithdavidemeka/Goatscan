@@ -415,10 +415,12 @@ export default function ProfilePage({
           <Card className="bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 h-full">
             <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
               <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-white">
-                DeFi Trades
+                Recent Trades
               </CardTitle>
               <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                Latest activity from Moralis swaps
+                {analytics && analytics.trades.length > 0
+                  ? `Showing ${Math.min(analytics.trades.length, 20)} most recent trades`
+                  : "Latest activity from Moralis swaps"}
               </CardDescription>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
@@ -431,12 +433,14 @@ export default function ProfilePage({
               ) : analytics && analytics.trades.length > 0 ? (
                 <div className="divide-y divide-gray-200 dark:divide-gray-800 max-h-[420px] overflow-y-auto pr-1">
                   {analytics.trades.slice(0, 20).map((trade) => (
-                    <div key={trade.signature} className="flex items-center justify-between py-3">
-                      <div className="flex flex-col">
+                    <div key={trade.signature || `${trade.timestamp}-${trade.tokenAddress}`} className="flex items-center justify-between py-3 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors rounded px-1 -mx-1">
+                      <div className="flex flex-col gap-1 flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`text-xs font-semibold uppercase ${
-                              trade.side === "buy" ? "text-emerald-400" : "text-rose-400"
+                            className={`text-xs font-semibold uppercase px-1.5 py-0.5 rounded ${
+                              trade.side === "buy" 
+                                ? "text-emerald-400 bg-emerald-400/10" 
+                                : "text-rose-400 bg-rose-400/10"
                             }`}
                           >
                             {trade.side}
@@ -445,16 +449,19 @@ export default function ProfilePage({
                             href={`https://dexscreener.com/solana/${trade.tokenAddress}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm font-semibold text-gray-900 dark:text-white hover:text-blue-500"
+                            className="text-sm font-semibold text-gray-900 dark:text-white hover:text-blue-500 truncate"
+                            title={`${formatNumberCompact(trade.quantity)} ${trade.tokenSymbol}`}
                           >
                             {formatNumberCompact(trade.quantity)} {trade.tokenSymbol}
                           </a>
                         </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatCurrency(trade.amountUsd)}
-                        </span>
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                          <span>{formatCurrency(trade.amountUsd)}</span>
+                          <span>•</span>
+                          <span>{getRelativeTime(trade.timestamp)} ago</span>
+                        </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right ml-3 flex-shrink-0">
                         <div
                           className={`text-sm font-semibold ${
                             trade.profitLossUsd >= 0 ? "text-emerald-400" : "text-rose-400"
@@ -463,15 +470,15 @@ export default function ProfilePage({
                           {trade.profitLossUsd >= 0 ? "+" : ""}
                           {formatCurrency(trade.profitLossUsd)}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {getRelativeTime(trade.timestamp)}
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          P&L
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
                   No trades recorded yet.
                 </div>
               )}
