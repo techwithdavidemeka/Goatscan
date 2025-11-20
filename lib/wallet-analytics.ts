@@ -1,6 +1,5 @@
 import { parseTradesFromTransactions, ParsedTrade } from "./helius";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Trade } from "@/lib/types";
 
 export interface WalletMetrics {
   totalProfitUsd: number;

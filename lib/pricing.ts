@@ -57,7 +57,8 @@ const MORALIS_API_KEY =
 const MORALIS_BASE_URL =
   process.env.MORALIS_BASE_URL || "https://solana-gateway.moralis.io";
 const MORALIS_NETWORK = process.env.MORALIS_NETWORK || "mainnet";
-const SOLANA_MINT = "So11111111111111111111111111111111111111112";
+export const SOLANA_MINT = "So11111111111111111111111111111111111111112";
+export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const CACHE_TTL_MS = 5 * 60_000;
 
 const priceCache = new Map<string, { data: PriceData; fetchedAt: number }>();

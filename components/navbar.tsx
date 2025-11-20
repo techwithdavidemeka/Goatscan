@@ -21,6 +21,7 @@ export function Navbar() {
   const [userProfile, setUserProfile] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [solPrice, setSolPrice] = useState<number | null>(null);
   
   // Only show search on leaderboard page
   const isLeaderboardPage = pathname === '/leaderboard';
@@ -125,6 +126,32 @@ export function Navbar() {
     setMobileOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    const fetchSolPrice = async () => {
+      try {
+        const res = await fetch("/api/sol-price");
+        if (!res.ok) return;
+        const data = await res.json();
+        setSolPrice(data.priceUsd ?? null);
+      } catch (error) {
+        console.error("Failed to fetch SOL price", error);
+      }
+    };
+    fetchSolPrice();
+    interval = setInterval(fetchSolPrice, 20000);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, []);
+
+  const SolPriceBadge = () => (
+    <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+      <span>SOL</span>
+      <span>{solPrice ? `$${solPrice.toFixed(2)}` : "..."}</span>
+    </div>
+  );
+
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (mobileOpen) {
@@ -213,6 +240,8 @@ export function Navbar() {
               </div>
             )}
 
+            {(<SolPriceBadge />)}
+
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -270,6 +299,7 @@ export function Navbar() {
 
           {/* Mobile Right Side - Search Icon (Leaderboard only) + Hamburger Menu */}
           <div className="md:hidden flex items-center gap-2">
+            <SolPriceBadge />
             {/* Mobile Search Icon - only on leaderboard */}
             {isLeaderboardPage && (
               <button
