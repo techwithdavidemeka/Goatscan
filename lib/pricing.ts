@@ -126,10 +126,6 @@ function getLegAmount(leg?: MoralisSwapLeg | null): number {
   if (typeof leg.amount === "number" && Number.isFinite(leg.amount)) {
     return leg.amount;
   }
-  if (typeof leg.amount === "string" && leg.amount.trim().length > 0) {
-    const parsed = Number(leg.amount);
-    if (Number.isFinite(parsed)) return parsed;
-  }
   if (typeof leg.amountFormatted === "string") {
     const parsed = Number(leg.amountFormatted);
     if (Number.isFinite(parsed)) return parsed;
