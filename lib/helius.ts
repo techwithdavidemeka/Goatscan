@@ -11,8 +11,13 @@ const HELIUS_BASE =
     ? `https://api.helius.xyz/v0`
     : "");
 
-const DEXSCREENER_TOKEN_ENDPOINT = "https://api.dexscreener.com/latest/dex/tokens";
-const JUPITER_PRICE_ENDPOINT = "https://price.jup.ag/v6/price?ids=SOL";
+import {
+  getTokenPrice,
+  getTokenMetadata,
+  getWalletSwaps,
+  MoralisSwap,
+} from "./pricing";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // -------------------------
 // Types
@@ -56,17 +61,22 @@ export type ParsedTrade = {
   side: TradeSide;
   quantity: number; // token quantity bought/sold
   amountUsd: number; // notional value of the trade in USD
+  amountSol: number; // notional value of the trade in SOL
   profitLossUsd: number; // PnL realized for sell trades; 0 for buys
+  profitLossSol: number; // PnL realized for sell trades in SOL; 0 for buys
+  priceUsd: number; // token price at trade time in USD
+  priceSol: number; // token price at trade time in SOL
+  priceSource: "moralis";
+  isBonded: boolean; // whether token has LP (bonded) at trade time
   timestamp: string; // ISO string
-  source: string; // e.g. "pumpfun", "raydium", "jupiter", "meteora", ...
+  source: string; // e.g. "pumpfun", "dex"
 };
 
 // -------------------------
 // Caches
 // -------------------------
 const tokenMetaCache = new Map<string, { symbol: string; fetchedAt: number }>();
-const SOL_PRICE_CACHE_TTL_MS = 60_000; // 1 minute
-let cachedSolPriceUsd: { value: number; ts: number } | null = null;
+// Note: SOL price cache is now in ./pricing module
 
 // -------------------------
 // Constants
@@ -83,102 +93,54 @@ const STABLE_OR_BLUECHIP_MINTS = new Set<string>([
   "JitoSOL1111111111111111111111111111111111111", // JitoSOL (placeholder, may differ)
 ]);
 
-// Recognize pump.fun and common DEX sources from Helius programInfo.source
-function normalizeSource(source?: string | null): string {
-  const s = (source || "").toLowerCase();
-  if (s.includes("pump")) return "pumpfun";
-  if (s.includes("raydium")) return "raydium";
-  if (s.includes("jupiter")) return "jupiter";
-  if (s.includes("meteora")) return "meteora";
-  if (s.includes("orca")) return "orca";
-  return s || "unknown";
-}
-
 // -------------------------
-// Price and Metadata Helpers
+// Metadata Helper
 // -------------------------
-export async function getSolPriceUsd(): Promise<number> {
-  const now = Date.now();
-  if (cachedSolPriceUsd && now - cachedSolPriceUsd.ts < SOL_PRICE_CACHE_TTL_MS) {
-    return cachedSolPriceUsd.value;
-  }
-  try {
-    const resp = await fetch(JUPITER_PRICE_ENDPOINT, { cache: "no-store" });
-    const json = await resp.json();
-    const price = json.data?.SOL?.price || 0;
-    if (price > 0) {
-      cachedSolPriceUsd = { value: price, ts: now };
-      return price;
-    }
-  } catch {
-    // ignore; fallback later
-  }
-  // conservative fallback
-  return 150;
-}
-
 async function getTokenSymbol(mint: string): Promise<string> {
   const cached = tokenMetaCache.get(mint);
   if (cached && Date.now() - cached.fetchedAt < 5 * 60_000) {
     return cached.symbol;
   }
   
-  // Try pump.fun API first (for pump.fun tokens)
-  try {
-    const pumpFunUrl = `https://frontend-api.pump.fun/coins/${mint}`;
-    const pumpResp = await fetch(pumpFunUrl, {
-      cache: "force-cache",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Referer": "https://pump.fun/",
-      },
-    });
-    if (pumpResp.ok) {
-      const pumpJson = await pumpResp.json();
-      const symbol = pumpJson?.symbol || pumpJson?.name || null;
-      if (symbol) {
-        tokenMetaCache.set(mint, { symbol, fetchedAt: Date.now() });
-        console.log(`Pump.fun API success for ${mint}: ${symbol}`);
-        return symbol;
-      }
-    } else {
-      console.log(`Pump.fun API returned ${pumpResp.status} for ${mint}, using fallback`);
-    }
-  } catch (error) {
-    // Continue to fallback - pump.fun API might be rate-limited or require auth
-    console.log(`Pump.fun API failed for ${mint}, using fallback:`, error);
-  }
-  
-  // Fallback to DexScreener
-  try {
-    const url = `${DEXSCREENER_TOKEN_ENDPOINT}/${mint}`;
-    const resp = await fetch(url, { cache: "force-cache" });
-    if (resp.ok) {
-      const json = await resp.json();
-      const symbol =
-        json?.pairs?.[0]?.baseToken?.symbol ||
-        json?.pairs?.[0]?.baseToken?.name ||
-        "MEME";
-      tokenMetaCache.set(mint, { symbol, fetchedAt: Date.now() });
-      return symbol;
-    }
-  } catch {
-    // ignore
-  }
-  return "MEME";
-}
-
-function lamportsToSol(lamports: number): number {
-  return lamports / 1_000_000_000;
-}
-
-function rawToAmount(raw: { tokenAmount: string; decimals: number }): number {
-  const amt = Number(raw.tokenAmount);
-  return raw.decimals > 0 ? amt / 10 ** raw.decimals : amt;
+  // Use pricing module's metadata function
+  const metadata = await getTokenMetadata(mint);
+  tokenMetaCache.set(mint, { symbol: metadata.symbol, fetchedAt: Date.now() });
+  return metadata.symbol;
 }
 
 function isExcludedMint(mint: string): boolean {
   return STABLE_OR_BLUECHIP_MINTS.has(mint);
+}
+
+function getLegMint(leg?: { mint?: string; address?: string; tokenAddress?: string }): string {
+  if (!leg) return "";
+  return leg.mint || leg.address || leg.tokenAddress || "";
+}
+
+function getLegAmount(leg?: { amount?: number; amountRaw?: string; rawAmount?: string; decimals?: number }): number {
+  if (!leg) return 0;
+  if (typeof leg.amount === "number" && Number.isFinite(leg.amount)) {
+    return leg.amount;
+  }
+  const rawValue =
+    leg.amountRaw ?? leg.rawAmount ?? 0;
+  const raw = typeof rawValue === "string" ? Number(rawValue) : rawValue;
+  const decimals = leg.decimals ?? 0;
+  if (!Number.isFinite(raw) || !Number.isFinite(decimals)) return 0;
+  return raw / 10 ** decimals;
+}
+
+function resolveSwapSignature(swap: MoralisSwap): string | null {
+  return swap.signature || swap.transactionSignature || null;
+}
+
+function resolveTimestampSeconds(swap: MoralisSwap): number {
+  return (
+    swap.blockTimestamp ||
+    swap.blockTime ||
+    swap.timestamp ||
+    Math.floor(Date.now() / 1000)
+  );
 }
 
 // -------------------------
@@ -215,120 +177,124 @@ export async function fetchWalletTransactions(
 }
 
 export async function parseTradesFromTransactions(
-  transactions: HeliusParsedTransaction[],
-  walletAddress: string
+  _transactions: HeliusParsedTransaction[],
+  walletAddress: string,
+  supabase?: SupabaseClient
 ): Promise<ParsedTrade[]> {
-  // Inventory per mint for FIFO cost basis
   const inventory: Record<
     string,
-    Array<{ qty: number; costUsdPerToken: number }>
+    Array<{ qty: number; costUsdPerToken: number; costSolPerToken: number }>
   > = {};
   const trades: ParsedTrade[] = [];
-  const solPriceUsd = await getSolPriceUsd();
 
-  console.log(`Parsing ${transactions.length} transactions for wallet ${walletAddress}`);
+  const swaps = await getWalletSwaps(walletAddress, { limit: 500 });
+  console.log(
+    `Parsing ${swaps.length} swaps from Moralis for wallet ${walletAddress}`
+  );
 
-  for (const tx of transactions) {
-    // Check if transaction is type SWAP
-    if (tx.type !== "SWAP") {
-      continue;
-    }
+  for (const swap of swaps) {
+    const signature = resolveSwapSignature(swap);
+    if (!signature) continue;
 
-    // Helius Enhanced Transactions API structure
-    // Use tokenTransfers and nativeTransfers instead of events.swap
-    const tokenTransfers = tx.tokenTransfers || [];
-    const nativeTransfers = tx.nativeTransfers || [];
-    
-    // Skip if no transfers
-    if (tokenTransfers.length === 0 && nativeTransfers.length === 0) {
-      continue;
-    }
+    const tokenIn = swap.tokenIn;
+    const tokenOut = swap.tokenOut;
+    const inMint = getLegMint(tokenIn);
+    const outMint = getLegMint(tokenOut);
 
-    const source = normalizeSource(tx.source || "unknown");
-    const timestampIso = new Date(tx.timestamp * 1000).toISOString();
+    const memecoinMint = !isExcludedMint(outMint)
+      ? outMint
+      : !isExcludedMint(inMint)
+      ? inMint
+      : "";
+    if (!memecoinMint) continue;
 
-    // Parse tokenTransfers to find token movements
-    // Find tokens the wallet received (BUY) or sent (SELL)
-    for (const tokenTransfer of tokenTransfers) {
-      const isBuy = tokenTransfer.toUserAccount === walletAddress;
-      const isSell = tokenTransfer.fromUserAccount === walletAddress;
-      
-      if (!isBuy && !isSell) continue;
-      
-      const mint = tokenTransfer.mint;
-      const qty = tokenTransfer.tokenAmount || 0;
-      
-      // Skip stablecoins (USDC, USDT, etc.)
-      if (isExcludedMint(mint)) continue;
-      
-      const symbol = await getTokenSymbol(mint);
-      
-      // Calculate USD value from native transfers (SOL spent/received)
-      let amountUsd = 0;
-      for (const nativeTransfer of nativeTransfers) {
-        if (isBuy && nativeTransfer.fromUserAccount === walletAddress) {
-          // Buying: wallet sent SOL
-          amountUsd = lamportsToSol(nativeTransfer.amount) * solPriceUsd;
-        } else if (isSell && nativeTransfer.toUserAccount === walletAddress) {
-          // Selling: wallet received SOL
-          amountUsd = lamportsToSol(nativeTransfer.amount) * solPriceUsd;
+    const isBuy = memecoinMint === outMint;
+    const memecoinLeg = isBuy ? tokenOut : tokenIn;
+    const qty = getLegAmount(memecoinLeg);
+    if (qty <= 0) continue;
+
+    const timestampSec = resolveSwapTimestamp(swap);
+    const timestampIso = new Date(timestampSec * 1000).toISOString();
+
+    const metadata = await getTokenMetadata(memecoinMint, supabase);
+    const priceData = await getTokenPrice(
+      memecoinMint,
+      timestampSec,
+      supabase
+    );
+    const amountUsd = qty * priceData.priceUsd;
+    const amountSol = qty * priceData.priceSol;
+    const source = priceData.isBonded ? "dex" : "pumpfun";
+
+    if (isBuy) {
+      if (!inventory[memecoinMint]) inventory[memecoinMint] = [];
+      const unitCostUsd = qty > 0 ? amountUsd / qty : priceData.priceUsd;
+      const unitCostSol = qty > 0 ? amountSol / qty : priceData.priceSol;
+      inventory[memecoinMint].push({
+        qty,
+        costUsdPerToken: unitCostUsd,
+        costSolPerToken: unitCostSol,
+      });
+
+      trades.push({
+        signature,
+        tokenAddress: memecoinMint,
+        tokenSymbol: metadata.symbol,
+        side: "buy",
+        quantity: qty,
+        amountUsd,
+        amountSol,
+        profitLossUsd: 0,
+        profitLossSol: 0,
+        priceUsd: priceData.priceUsd,
+        priceSol: priceData.priceSol,
+        priceSource: priceData.source,
+        isBonded: priceData.isBonded,
+        timestamp: timestampIso,
+        source,
+      });
+    } else {
+      let remaining = qty;
+      let costUsd = 0;
+      let costSol = 0;
+      const lots = inventory[memecoinMint] || [];
+      while (remaining > 0 && lots.length > 0) {
+        const lot = lots[0];
+        const take = Math.min(remaining, lot.qty);
+        costUsd += take * lot.costUsdPerToken;
+        costSol += take * lot.costSolPerToken;
+        lot.qty -= take;
+        remaining -= take;
+        if (lot.qty <= 1e-9) {
+          lots.shift();
         }
       }
-      
-      if (isBuy) {
-        // BUY: Record inventory for cost basis
-        if (!inventory[mint]) inventory[mint] = [];
-        const unitCost = qty > 0 ? amountUsd / qty : 0;
-        inventory[mint].push({ qty, costUsdPerToken: unitCost });
-        
-        trades.push({
-          signature: tx.signature,
-          tokenAddress: mint,
-          tokenSymbol: symbol,
-          side: "buy",
-          quantity: qty,
-          amountUsd: amountUsd,
-          profitLossUsd: 0,
-          timestamp: timestampIso,
-          source,
-        });
-      } else if (isSell) {
-        // SELL: Compute cost basis from inventory FIFO
-        let remaining = qty;
-        let costUsd = 0;
-        const lots = inventory[mint] || [];
-        while (remaining > 0 && lots.length > 0) {
-          const lot = lots[0];
-          const take = Math.min(remaining, lot.qty);
-          costUsd += take * lot.costUsdPerToken;
-          lot.qty -= take;
-          remaining -= take;
-          if (lot.qty <= 1e-9) {
-            lots.shift();
-          }
-        }
-        inventory[mint] = lots;
-        
-        const pnlUsd = amountUsd - costUsd;
-        
-        trades.push({
-          signature: tx.signature,
-          tokenAddress: mint,
-          tokenSymbol: symbol,
-          side: "sell",
-          quantity: qty,
-          amountUsd: amountUsd,
-          profitLossUsd: pnlUsd,
-          timestamp: timestampIso,
-          source,
-        });
-      }
+      inventory[memecoinMint] = lots;
+
+      const pnlUsd = amountUsd - costUsd;
+      const pnlSol = amountSol - costSol;
+
+      trades.push({
+        signature,
+        tokenAddress: memecoinMint,
+        tokenSymbol: metadata.symbol,
+        side: "sell",
+        quantity: qty,
+        amountUsd,
+        amountSol,
+        profitLossUsd: pnlUsd,
+        profitLossSol: pnlSol,
+        priceUsd: priceData.priceUsd,
+        priceSol: priceData.priceSol,
+        priceSource: priceData.source,
+        isBonded: priceData.isBonded,
+        timestamp: timestampIso,
+        source,
+      });
     }
   }
 
-  // Filter to memecoins: include any token not in excluded list
-  const filtered = trades.filter((t) => !isExcludedMint(t.tokenAddress));
-  return filtered;
+  return trades.filter((t) => !isExcludedMint(t.tokenAddress));
 }
 
 

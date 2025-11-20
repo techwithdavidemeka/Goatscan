@@ -1,4 +1,4 @@
-import { fetchWalletTransactions, parseTradesFromTransactions, ParsedTrade, getSolPriceUsd } from "./helius";
+import { fetchWalletTransactions, parseTradesFromTransactions, ParsedTrade } from "./helius";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Trade } from "@/lib/types";
 
@@ -24,8 +24,8 @@ export async function calculateWalletMetrics(
       console.log(`First transaction sample:`, JSON.stringify(transactions[0], null, 2).substring(0, 1000));
     }
     
-    // Parse trades from transactions
-    const parsedTrades = await parseTradesFromTransactions(transactions, walletAddress);
+    // Parse trades from transactions (pass supabase for price caching)
+    const parsedTrades = await parseTradesFromTransactions(transactions, walletAddress, supabase);
     console.log(`Parsed ${parsedTrades.length} trades from ${transactions.length} transactions`);
 
     // Log inclusion by source (Pump.fun vs DEX)
@@ -64,13 +64,19 @@ export async function calculateWalletMetrics(
     console.log(`Deduplication for ${walletAddress}: newTrades=${newTrades.length}, existing=${(existingTradesByUser?.length)||0}, globalSignatures=${existingSignatures.size}`);
     
     if (newTrades.length > 0) {
-      // Insert new trades - prefer including source/side/quantity if columns exist
+      // Insert new trades - prefer including all available columns
       const tradesWithExtended = newTrades.map((trade) => ({
         user_id: userId,
         token_symbol: trade.tokenSymbol,
         token_address: trade.tokenAddress,
         amount_usd: trade.amountUsd,
+        amount_sol: trade.amountSol, // new column
         profit_loss_usd: trade.profitLossUsd,
+        profit_loss_sol: trade.profitLossSol, // new column
+        price_usd: trade.priceUsd, // new column
+        price_sol: trade.priceSol, // new column
+        price_source: trade.priceSource, // new column
+        is_bonded: trade.isBonded, // new column
         timestamp: trade.timestamp,
         source: trade.source, // optional column
         side: trade.side, // optional column
@@ -87,7 +93,9 @@ export async function calculateWalletMetrics(
           token_symbol: trade.tokenSymbol,
           token_address: trade.tokenAddress,
           amount_usd: trade.amountUsd,
+          amount_sol: trade.amountSol,
           profit_loss_usd: trade.profitLossUsd,
+          profit_loss_sol: trade.profitLossSol,
           timestamp: trade.timestamp,
         }));
         const retry = await supabase.from("trades").insert(tradesMinimal);
@@ -114,20 +122,39 @@ export async function calculateWalletMetrics(
       };
     }
     
-    // Calculate metrics
-    const totalProfitUsd = allTrades.reduce(
-      (sum: number, trade: Trade) => sum + (trade.profit_loss_usd || 0),
+    // Calculate metrics using new formula: PnL = totalSellUSD - totalBuyUSD
+    const buyTrades = allTrades.filter((t: any) => t.side === "buy" || !t.side);
+    const sellTrades = allTrades.filter((t: any) => t.side === "sell");
+    
+    // Calculate total buy and sell amounts
+    const totalBuyUsd = buyTrades.reduce(
+      (sum: number, trade: any) => sum + (trade.amount_usd || 0),
+      0
+    );
+    const totalSellUsd = sellTrades.reduce(
+      (sum: number, trade: any) => sum + (trade.amount_usd || 0),
       0
     );
     
+    // PnL = totalSellUSD - totalBuyUSD
+    const totalProfitUsd = totalSellUsd - totalBuyUsd;
+    
+    // Calculate SOL-denominated PnL
+    const totalBuySol = buyTrades.reduce(
+      (sum: number, trade: any) => sum + (trade.amount_sol || 0),
+      0
+    );
+    const totalSellSol = sellTrades.reduce(
+      (sum: number, trade: any) => sum + (trade.amount_sol || 0),
+      0
+    );
+    const totalProfitSol = totalSellSol - totalBuySol;
+    
+    // Calculate total volume (all trades)
     const totalVolume = allTrades.reduce(
-      (sum: number, trade: Trade) => sum + (trade.amount_usd || 0),
+      (sum: number, trade: any) => sum + (trade.amount_usd || 0),
       0
     );
-    
-    // Current SOL price for SOL-denominated PnL
-    const solPrice = await getSolPriceUsd();
-    const totalProfitSol = solPrice > 0 ? totalProfitUsd / solPrice : 0;
 
     // Calculate PnL percentage
     // PnL% = (Total Profit / Total Volume) * 100
