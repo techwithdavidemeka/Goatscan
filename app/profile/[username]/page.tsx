@@ -87,7 +87,7 @@ export default function ProfilePage({
     async function fetchAnalytics() {
       try {
         setAnalyticsLoading(true);
-        const res = await fetch(`/api/profile-analytics/${trader.wallet_address}`);
+        const res = await fetch(`/api/profile-analytics/${trader!.wallet_address}`);
         if (!res.ok) throw new Error("Failed to fetch analytics");
         const data = await res.json();
         if (!cancelled) {
