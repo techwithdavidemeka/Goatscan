@@ -56,7 +56,7 @@ const MORALIS_API_KEY =
   process.env.MORALIS_API_KEY || process.env.NEXT_PUBLIC_MORALIS_API_KEY;
 const MORALIS_BASE_URL =
   process.env.MORALIS_BASE_URL || "https://solana-gateway.moralis.io";
-const MORALIS_NETWORK = process.env.MORALIS_NETWORK || "mainnet";
+export const MORALIS_NETWORK = process.env.MORALIS_NETWORK || "mainnet";
 export const SOLANA_MINT = "So11111111111111111111111111111111111111112";
 export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const CACHE_TTL_MS = 5 * 60_000;
@@ -65,6 +65,29 @@ const priceCache = new Map<string, { data: PriceData; fetchedAt: number }>();
 const metadataCache = new Map<string, { data: TokenMetadata; fetchedAt: number }>();
 const pumpStatusCache = new Map<string, { data: PumpfunStatus; fetchedAt: number }>();
 let solPriceCache: { value: number; ts: number } | null = null;
+
+export type MoralisNativeBalance = {
+  lamports: number;
+  sol: number;
+};
+
+export type MoralisTokenBalance = {
+  mint?: string;
+  tokenAddress?: string;
+  address?: string;
+  symbol?: string;
+  name?: string;
+  decimals?: number;
+  amount?: number;
+  amountRaw?: string;
+  rawAmount?: string;
+  amountDecimal?: number;
+  balance?: string;
+  priceUsd?: number;
+  usdPrice?: number;
+  usd_value?: number;
+  valueUsd?: number;
+};
 
 function ensureMoralisConfig() {
   if (!MORALIS_API_KEY) {
@@ -99,6 +122,13 @@ async function moralisFetch(
     throw new Error(`Moralis error ${resp.status}: ${text}`);
   }
   return resp.json();
+}
+
+export async function moralisRequest(
+  path: string,
+  query?: Record<string, string | number | undefined>
+) {
+  return moralisFetch(path, query);
 }
 
 function lamportsToNumber(value: string | number | undefined, decimals: number) {
@@ -137,6 +167,48 @@ function getLegAmount(leg?: MoralisSwapLeg | null): number {
   return lamportsToNumber(
     leg.amountRaw ?? leg.rawAmount ?? 0,
     leg.decimals ?? 0
+  );
+}
+
+export async function getWalletNativeBalance(
+  walletAddress: string
+): Promise<MoralisNativeBalance> {
+  const data = await moralisFetch(
+    `/account/${MORALIS_NETWORK}/${walletAddress}/balance`
+  );
+  const lamports =
+    Number(
+      data?.nativeBalance?.lamports ??
+        data?.lamports ??
+        data?.balance ??
+        data?.result?.lamports ??
+        0
+    ) || 0;
+  const sol =
+    data?.nativeBalance?.sol ??
+    (lamports ? lamports / 1_000_000_000 : 0);
+  return { lamports, sol };
+}
+
+export async function getWalletTokenBalances(
+  walletAddress: string,
+  params?: Record<string, string | number>
+): Promise<MoralisTokenBalance[]> {
+  const data = await moralisFetch(
+    `/account/${MORALIS_NETWORK}/${walletAddress}/tokens`,
+    params
+  );
+  const tokens = data?.tokens || data?.result || data || [];
+  return Array.isArray(tokens) ? tokens : [];
+}
+
+export async function getWalletPortfolio(
+  walletAddress: string,
+  params?: Record<string, string | number>
+): Promise<any> {
+  return moralisFetch(
+    `/account/${MORALIS_NETWORK}/${walletAddress}/portfolio`,
+    params
   );
 }
 
@@ -362,16 +434,38 @@ export async function getPumpfunList(
   return moralisFetch(`/token/mainnet/exchange/pumpfun/${list}`);
 }
 
-export async function getWalletSwaps(
+export type MoralisSwapsPage = {
+  swaps: MoralisSwap[];
+  cursor?: string;
+};
+
+export async function getWalletSwapsPage(
   walletAddress: string,
   params?: Record<string, string | number>
-): Promise<MoralisSwap[]> {
+): Promise<MoralisSwapsPage> {
   const data = await moralisFetch(
     `/account/${MORALIS_NETWORK}/${walletAddress}/swaps`,
     params
   );
   const swaps = data?.swaps || data?.result || data || [];
-  return Array.isArray(swaps) ? swaps : [];
+  const cursor =
+    data?.cursor ||
+    data?.nextCursor ||
+    data?.next ||
+    data?.page?.nextCursor ||
+    undefined;
+  return {
+    swaps: Array.isArray(swaps) ? swaps : [],
+    cursor,
+  };
+}
+
+export async function getWalletSwaps(
+  walletAddress: string,
+  params?: Record<string, string | number>
+): Promise<MoralisSwap[]> {
+  const { swaps } = await getWalletSwapsPage(walletAddress, params);
+  return swaps;
 }
 
 export async function getTokenSwaps(

@@ -1,5 +1,21 @@
-import { getWalletSwaps, getTokenMetadata, getTokenPrice, MoralisSwap, MoralisSwapLeg, SOLANA_MINT, USDC_MINT } from "./pricing";
-import type { ProfileAnalytics, ProfileStats, ProfileTrade, HoldingsSummary } from "./types/profileAnalytics";
+import {
+  getWalletSwapsPage,
+  getWalletNativeBalance,
+  getWalletTokenBalances,
+  getTokenMetadata,
+  getTokenPrice,
+  MoralisSwap,
+  MoralisSwapLeg,
+  MoralisTokenBalance,
+  SOLANA_MINT,
+  USDC_MINT,
+} from "./pricing";
+import type {
+  ProfileAnalytics,
+  ProfileStats,
+  ProfileTrade,
+  HoldingsSummary,
+} from "./types/profileAnalytics";
 
 type InventoryLot = {
   qty: number;
@@ -10,12 +26,15 @@ type InventoryLot = {
 
 const STABLE_OR_BLUECHIP_MINTS = new Set<string>([
   USDC_MINT,
-  // Additional blue chips we ignore for memecoin detection
   "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", // USDT
   "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
   "7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL3qYk7RKV6x",
   "JitoSOL1111111111111111111111111111111111111",
 ]);
+
+const MAX_SWAP_PAGES = 80;
+const SWAPS_PER_PAGE = 25;
+const MAX_SWAPS = 1200;
 
 function isExcludedMint(mint: string): boolean {
   return STABLE_OR_BLUECHIP_MINTS.has(mint);
@@ -42,7 +61,7 @@ function getLegAmount(leg?: MoralisSwapLeg | null): number {
   const raw = typeof rawValue === "string" ? Number(rawValue) : rawValue;
   const decimals = leg.decimals ?? 0;
   if (!Number.isFinite(raw) || !Number.isFinite(decimals)) return 0;
-  return raw / 10 ** decimals;
+  return decimals ? raw / 10 ** decimals : raw;
 }
 
 function resolveSwapTimestamp(swap: MoralisSwap): number {
@@ -60,9 +79,65 @@ function getPrimaryTokenMint(tokenInMint: string, tokenOutMint: string) {
   return tokenOutMint || tokenInMint;
 }
 
-export async function getProfileAnalytics(walletAddress: string): Promise<ProfileAnalytics> {
-  const swaps = await getWalletSwaps(walletAddress, { limit: 100 });
-  const sorted = [...swaps].sort(
+function parseTokenAmount(balance?: MoralisTokenBalance | null): number {
+  if (!balance) return 0;
+  if (typeof balance.amount === "number" && Number.isFinite(balance.amount)) {
+    return balance.amount;
+  }
+  if (typeof balance.amountDecimal === "number" && Number.isFinite(balance.amountDecimal)) {
+    return balance.amountDecimal;
+  }
+  if (typeof balance.balance === "string") {
+    const parsed = Number(balance.balance);
+    if (Number.isFinite(parsed)) {
+      return balance.decimals ? parsed / 10 ** balance.decimals : parsed;
+    }
+  }
+  const rawValue =
+    balance.amountRaw ??
+    balance.rawAmount ??
+    0;
+  const raw = typeof rawValue === "string" ? Number(rawValue) : rawValue;
+  if (!Number.isFinite(raw)) return 0;
+  const decimals = balance.decimals ?? 0;
+  return decimals ? raw / 10 ** decimals : raw;
+}
+
+async function fetchAllWalletSwaps(walletAddress: string): Promise<MoralisSwap[]> {
+  const all: MoralisSwap[] = [];
+  let cursor: string | undefined = undefined;
+
+  for (let page = 0; page < MAX_SWAP_PAGES; page++) {
+    const params: Record<string, string | number> = {
+      limit: SWAPS_PER_PAGE,
+      order: "DESC",
+      transactionTypes: "buy,sell",
+    };
+    if (cursor) {
+      params.cursor = cursor;
+    }
+    const { swaps, cursor: nextCursor } = await getWalletSwapsPage(walletAddress, params);
+    all.push(...swaps);
+    if (!nextCursor || swaps.length === 0 || all.length >= MAX_SWAPS) {
+      break;
+    }
+    cursor = nextCursor;
+  }
+
+  return all;
+}
+
+export async function getProfileAnalytics(
+  walletAddress: string
+): Promise<ProfileAnalytics> {
+  const [swapsRaw, nativeBalance, tokenBalances, solPriceData] = await Promise.all([
+    fetchAllWalletSwaps(walletAddress),
+    getWalletNativeBalance(walletAddress),
+    getWalletTokenBalances(walletAddress, { excludeSpam: "true" }),
+    getTokenPrice(SOLANA_MINT),
+  ]);
+
+  const sorted = [...swapsRaw].sort(
     (a, b) => resolveSwapTimestamp(a) - resolveSwapTimestamp(b)
   );
 
@@ -75,7 +150,6 @@ export async function getProfileAnalytics(walletAddress: string): Promise<Profil
 
   let totalVolumeUsd = 0;
   let realizedProfitUsd = 0;
-  let unrealizedProfitUsd = 0;
   let wins = 0;
   let totalSells = 0;
   let topWinUsd = 0;
@@ -99,7 +173,7 @@ export async function getProfileAnalytics(walletAddress: string): Promise<Profil
 
     if (!metadataCache.has(selectedMint)) {
       const metadata = await getTokenMetadata(selectedMint);
-      metadataCache.set(selectedMint, { symbol: metadata.symbol });
+      metadataCache.set(selectedMint, { symbol: metadata.symbol || "MEME" });
     }
     const { symbol } = metadataCache.get(selectedMint)!;
 
@@ -129,6 +203,7 @@ export async function getProfileAnalytics(walletAddress: string): Promise<Profil
         costSolPerToken: priceData.priceSol,
         timestamp: timestampSec,
       });
+
       trades.push({
         signature,
         tokenAddress: selectedMint,
@@ -146,7 +221,6 @@ export async function getProfileAnalytics(walletAddress: string): Promise<Profil
     totalSells += 1;
     let remaining = qty;
     let costUsd = 0;
-    let latestLotTimestamp = timestampSec;
     const lots = inventory.get(selectedMint)!;
 
     while (remaining > 0 && lots.length > 0) {
@@ -161,7 +235,6 @@ export async function getProfileAnalytics(walletAddress: string): Promise<Profil
       if (lot.qty <= 1e-9) {
         lots.shift();
       }
-      latestLotTimestamp = lot.timestamp;
     }
     inventory.set(selectedMint, lots);
 
@@ -183,7 +256,8 @@ export async function getProfileAnalytics(walletAddress: string): Promise<Profil
     });
   }
 
-  const holdings: HoldingsSummary[] = [];
+  const holdingsMap = new Map<string, HoldingsSummary>();
+  let unrealizedProfitUsd = 0;
 
   for (const [mint, lots] of inventory.entries()) {
     const totalQty = lots.reduce((sum, lot) => sum + lot.qty, 0);
@@ -193,7 +267,7 @@ export async function getProfileAnalytics(walletAddress: string): Promise<Profil
 
     if (!metadataCache.has(mint)) {
       const metadata = await getTokenMetadata(mint);
-      metadataCache.set(mint, { symbol: metadata.symbol });
+      metadataCache.set(mint, { symbol: metadata.symbol || "MEME" });
     }
     const symbol = metadataCache.get(mint)!.symbol;
 
@@ -206,7 +280,7 @@ export async function getProfileAnalytics(walletAddress: string): Promise<Profil
     const unrealized = (markPrice - avgCostUsd) * totalQty;
     unrealizedProfitUsd += unrealized;
 
-    holdings.push({
+    holdingsMap.set(mint, {
       tokenAddress: mint,
       tokenSymbol: symbol,
       quantity: totalQty,
@@ -217,20 +291,72 @@ export async function getProfileAnalytics(walletAddress: string): Promise<Profil
     });
   }
 
-  const solBalance =
-    holdings.find((h) => h.tokenAddress === SOLANA_MINT)?.quantity ?? 0;
-  const usdcBalance =
-    holdings.find((h) => h.tokenAddress === USDC_MINT)?.quantity ?? 0;
+  // Include other SPL balances (without cost basis)
+  for (const token of tokenBalances) {
+    const mint =
+      token.mint || token.tokenAddress || token.address || "";
+    if (!mint || mint === SOLANA_MINT || mint === USDC_MINT) continue;
+    if (holdingsMap.has(mint)) continue;
+    const quantity = parseTokenAmount(token);
+    if (!quantity || quantity <= 0) continue;
+
+    if (!metadataCache.has(mint)) {
+      const metadata = await getTokenMetadata(mint);
+      metadataCache.set(mint, { symbol: metadata.symbol || "MEME" });
+    }
+    const symbol = metadataCache.get(mint)!.symbol;
+    const priceData = await getTokenPrice(mint);
+    const markValueUsd = priceData.priceUsd * quantity;
+
+    holdingsMap.set(mint, {
+      tokenAddress: mint,
+      tokenSymbol: symbol,
+      quantity,
+      avgCostUsd: priceData.priceUsd,
+      markPriceUsd: priceData.priceUsd,
+      markValueUsd,
+      unrealizedUsd: 0,
+    });
+  }
+
+  const holdings = Array.from(holdingsMap.values());
+
+  const solBalance = nativeBalance.sol;
+  const solPriceUsd = solPriceData.priceUsd || 0;
+  const solValueUsd = solBalance * solPriceUsd;
+
+  const usdcEntry = tokenBalances.find(
+    (token) =>
+      (token.mint || token.tokenAddress || token.address) === USDC_MINT
+  );
+  const usdcBalance = parseTokenAmount(usdcEntry);
+  const usdcValueUsd = usdcBalance; // assume stable at $1
+
+  const holdingsValueUsd = holdings.reduce(
+    (sum, holding) => sum + holding.markValueUsd,
+    0
+  );
+
+  const portfolioValueUsd = solValueUsd + usdcValueUsd + holdingsValueUsd;
+  const totalProfitUsd = realizedProfitUsd + unrealizedProfitUsd;
 
   const stats: ProfileStats = {
     solBalance,
     usdcBalance,
+    solPriceUsd,
+    portfolioValueUsd,
     winRate: totalSells > 0 ? (wins / totalSells) * 100 : 0,
     avgDurationSeconds: durationQty > 0 ? durationWeightedSeconds / durationQty : 0,
     topWinUsd,
     totalVolumeUsd,
     realizedProfitUsd,
     unrealizedProfitUsd,
+    totalProfitUsd,
+    totalTrades: sorted.length,
+    lastTradeTimestamp:
+      sorted.length > 0
+        ? resolveSwapTimestamp(sorted[sorted.length - 1])
+        : null,
   };
 
   trades.sort((a, b) => b.timestamp - a.timestamp);
