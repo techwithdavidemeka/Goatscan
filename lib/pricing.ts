@@ -31,6 +31,8 @@ export type MoralisSwapLeg = {
   amount?: number;
   amountRaw?: string;
   rawAmount?: string;
+  amountFormatted?: string;
+  amountDecimal?: number;
   symbol?: string;
   name?: string;
 };
@@ -123,6 +125,17 @@ function getLegAmount(leg?: MoralisSwapLeg | null): number {
   if (!leg) return 0;
   if (typeof leg.amount === "number" && Number.isFinite(leg.amount)) {
     return leg.amount;
+  }
+  if (typeof leg.amount === "string" && leg.amount.trim().length > 0) {
+    const parsed = Number(leg.amount);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  if (typeof leg.amountFormatted === "string") {
+    const parsed = Number(leg.amountFormatted);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  if (typeof leg.amountDecimal === "number" && Number.isFinite(leg.amountDecimal)) {
+    return leg.amountDecimal;
   }
   return lamportsToNumber(
     leg.amountRaw ?? leg.rawAmount ?? 0,
