@@ -120,15 +120,10 @@ export default function ProfilePage({
     return lastTradeDate >= sevenDaysAgo;
   }, [trader]);
 
-  if (loading || !trader) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
-      </div>
-    );
-  }
-
   const statCards = useMemo(() => {
+    if (!trader) {
+      return [];
+    }
     if (analytics) {
       const pnlPercent =
         analytics.stats.totalVolumeUsd > 0
@@ -192,6 +187,14 @@ export default function ProfilePage({
       },
     ];
   }, [analytics, trader]);
+
+  if (loading || !trader) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
+      </div>
+    );
+  }
 
   const formatCurrency = (value: number, opts: Intl.NumberFormatOptions = {}) =>
     `$${value.toLocaleString(undefined, {
