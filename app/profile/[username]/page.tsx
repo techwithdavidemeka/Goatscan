@@ -46,15 +46,22 @@ export default function ProfilePage({
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const user = await getUserByUsername(username);
+      try {
+        const user = await getUserByUsername(username);
 
-      if (!user) {
+        if (!user) {
+          console.warn(`User not found for username: ${username}`);
+          router.push("/home");
+          return;
+        }
+
+        setTrader(user);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
         router.push("/home");
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      setTrader(user);
-      setLoading(false);
     }
 
     fetchData();

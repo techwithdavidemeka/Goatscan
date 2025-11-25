@@ -33,11 +33,11 @@ export async function getLeaderboard(): Promise<User[]> {
 }
 
 export async function getUserByUsername(username: string): Promise<User | null> {
+  // Try case-insensitive lookup first
   const { data, error } = await supabase
     .from("users")
     .select("*")
-    .eq("x_username", username)
-    .eq("active", true)
+    .ilike("x_username", username) // Case-insensitive match
     .single();
 
   if (error) {
