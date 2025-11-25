@@ -11,11 +11,10 @@ export type PriceData = {
 export type TokenMetadata = {
   symbol: string;
   name: string;
+  // Only include fields that are reliably available from Moralis Solana API
+  // Optional fields like image, description, fdv, liquidity, marketCap may not be available
   image?: string;
   description?: string;
-  fdv?: number;
-  liquidity?: number;
-  marketCap?: number;
 };
 
 export type PumpfunStatus = {
@@ -258,16 +257,13 @@ export async function getTokenMetadata(
     try {
       const { data } = await supabase
         .from("token_metadata")
-        .select("symbol, name, fdv, liquidity, market_cap")
+        .select("symbol, name")
         .eq("token_address", tokenAddress)
         .single();
       if (data) {
         const metadata: TokenMetadata = {
           symbol: data.symbol || "MEME",
           name: data.name || "Unknown",
-          fdv: data.fdv ? Number(data.fdv) : undefined,
-          liquidity: data.liquidity ? Number(data.liquidity) : undefined,
-          marketCap: data.market_cap ? Number(data.market_cap) : undefined,
         };
         metadataCache.set(tokenAddress, { data: metadata, fetchedAt: Date.now() });
         return metadata;
@@ -281,14 +277,13 @@ export async function getTokenMetadata(
     const data = await moralisFetch(
       `/token/${MORALIS_NETWORK}/${tokenAddress}/metadata`
     );
+    // Only use fields that are reliably available from Moralis Solana API
     const metadata: TokenMetadata = {
       symbol: data?.symbol || "MEME",
       name: data?.name || "Unknown",
-      image: data?.image,
-      description: data?.description,
-      fdv: data?.fdv || data?.market_cap,
-      liquidity: data?.liquidity?.usd || data?.liquidity,
-      marketCap: data?.market_cap,
+      image: data?.image || undefined,
+      description: data?.description || undefined,
+      // Removed fdv, liquidity, marketCap as they may not be available
     };
     metadataCache.set(tokenAddress, { data: metadata, fetchedAt: Date.now() });
 
@@ -298,9 +293,7 @@ export async function getTokenMetadata(
           token_address: tokenAddress,
           symbol: metadata.symbol,
           name: metadata.name,
-          fdv: metadata.fdv ? metadata.fdv.toString() : null,
-          liquidity: metadata.liquidity ? metadata.liquidity.toString() : null,
-          market_cap: metadata.marketCap ? metadata.marketCap.toString() : null,
+          // Removed fdv, liquidity, market_cap as they may not be available
           updated_at: new Date().toISOString(),
         });
       } catch {
