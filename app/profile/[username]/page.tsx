@@ -67,15 +67,34 @@ export default function ProfilePage({
       try {
         setAnalyticsLoading(true);
         const res = await fetch(`/api/profile-analytics/${trader!.wallet_address}`);
-        if (!res.ok) throw new Error("Failed to fetch analytics");
         const data = await res.json();
         if (!cancelled) {
+          // Always set analytics, even if it's empty (API returns empty structure on error)
           setAnalytics(data);
         }
       } catch (error) {
         console.error("Failed to fetch profile analytics", error);
         if (!cancelled) {
-          setAnalytics(null);
+          // Set empty analytics structure instead of null
+          setAnalytics({
+            stats: {
+              solBalance: 0,
+              usdcBalance: 0,
+              solPriceUsd: 0,
+              portfolioValueUsd: 0,
+              winRate: 0,
+              avgDurationSeconds: 0,
+              topWinUsd: 0,
+              totalVolumeUsd: 0,
+              realizedProfitUsd: 0,
+              unrealizedProfitUsd: 0,
+              totalProfitUsd: 0,
+              totalTrades: 0,
+              lastTradeTimestamp: null,
+            },
+            trades: [],
+            holdings: [],
+          });
         }
       } finally {
         if (!cancelled) {
